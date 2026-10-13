@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#070B1A" />
+    <title>Tomorrowland Reimagined</title>
+    <meta name="description" content="An interactive 3D fan concept of a retro-futurist theme park land, redesigned from an attractions operator's point of view. Today vs Upgraded, with a live guest-flow model." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%23FF7A3D'/%3E%3Cellipse cx='16' cy='16' rx='15' ry='5' fill='none' stroke='%237C5CFF' stroke-width='2' transform='rotate(-20 16 16)'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body data-mode="today">
+    <div id="stage" aria-label="3D model of the land. Drag to orbit, scroll or pinch to zoom."></div>
+
+    <header class="brand">
+      <div class="brand-title">Tomorrowland <span class="grad">Reimagined</span></div>
+      <div class="brand-sub"><span class="badge">Fan concept</span><span class="who"> by Bryan, ex-attractions operator</span></div>
+    </header>
+
+    <nav class="tools" aria-label="View options">
+      <button class="icon-btn" id="btn-about" title="About this concept" aria-label="About this concept">?</button>
+      <button class="icon-btn" id="btn-labels" title="Toggle area labels" aria-label="Toggle area labels" aria-pressed="true">Aa</button>
+      <button class="icon-btn" id="btn-pause" title="Pause guest flow" aria-label="Pause guest flow" aria-pressed="false">II</button>
+      <button class="icon-btn" id="btn-home" title="Reset view" aria-label="Reset view">&#8962;</button>
+    </nav>
+
+    <div class="dock">
+      <div class="seg" role="group" aria-label="Scenario">
+        <button id="mode-today" class="seg-btn active" aria-pressed="true">Today</button>
+        <button id="mode-up" class="seg-btn" aria-pressed="false">Upgraded</button>
+        <span class="seg-thumb" aria-hidden="true"></span>
+      </div>
+      <button class="btn primary" id="btn-tour">Guided tour</button>
+    </div>
+
+    <section class="stats" id="stats" aria-label="Guest flow model">
+      <button class="stats-head" id="stats-toggle" aria-expanded="true">
+        <span class="live-dot" aria-hidden="true"></span> Guest flow model
+        <span class="chev" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="stats-body">
+        <table>
+          <thead><tr><th></th><th class="col-today">Today</th><th class="col-up">Upgraded</th></tr></thead>
+          <tbody>
+            <tr><td>Avg walk (min)</td><td class="col-today mono" id="s-walk-t">-</td><td class="col-up mono" id="s-walk-u">-</td></tr>
+            <tr><td>Crowding idx</td><td class="col-today mono" id="s-crowd-t">-</td><td class="col-up mono" id="s-crowd-u">-</td></tr>
+            <tr><td>Hottest spot</td><td class="col-today small" id="s-hot-t">-</td><td class="col-up small" id="s-hot-u">-</td></tr>
+          </tbody>
+        </table>
+        <div class="delta" id="s-delta"></div>
+        <p class="fine">Simple agent model, 650 guests, illustrative only. Not park data. Dot colour shows local crowding.</p>
+      </div>
+    </section>
+
+    <aside class="card" id="card" aria-live="polite" hidden>
+      <div class="card-top">
+        <span class="card-num mono" id="c-num">01</span>
+        <span class="card-area" id="c-area"></span>
+        <button class="icon-btn small" id="c-close" aria-label="Close">&#10005;</button>
+      </div>
+      <h2 id="c-title"></h2>
+      <p class="inspired" id="c-insp"></p>
+      <div class="card-scroll">
+        <h3><span class="tag tag-problem">Problem</span></h3>
+        <p id="c-problem"></p>
+        <h3><span class="tag tag-fix">Fix</span></h3>
+        <p id="c-fix"></p>
+        <h3><span class="tag tag-impact">Expected impact</span></h3>
+        <dl id="c-impact"></dl>
+        <div class="readout" id="c-readout"></div>
+        <p class="fine">Items marked [verify] are working assumptions to confirm before presenting as fact.</p>
+      </div>
+      <div class="card-nav">
+        <button class="btn ghost" id="c-prev">Prev</button>
+        <span class="mono" id="c-count">1 / 6</span>
+        <button class="btn primary" id="c-next">Next</button>
+      </div>
+    </aside>
+
+    <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+      <div class="intro-panel">
+        <div class="eyebrow">Fan concept / operations case study</div>
+        <h1 id="intro-title">Tomorrowland <span class="grad">Reimagined</span></h1>
+        <p>I worked attractions in Tomorrowland at Magic Kingdom. Every shift I watched the same things go wrong in the same places: the coaster exit jamming up, the queue merge spilling onto the walkway, mobile-order guests parked in the middle of the promenade.</p>
+        <p>This is the land the way I would run it. It is a stylized model built entirely in code. Flip between <strong>Today</strong> and <strong>Upgraded</strong>, open the six pins to see each problem, the fix and what I expect it to move, and watch the guest dots spread out when the pinch points open up.</p>
+        <ul class="intro-hints">
+          <li><b>Drag</b> to orbit, <b>scroll or pinch</b> to zoom, <b>right-drag or two fingers</b> to pan</li>
+          <li><b>Pins</b> open the Problem / Fix / Impact cards</li>
+        </ul>
+        <div class="intro-actions">
+          <button class="btn primary" id="intro-tour">Take the guided tour</button>
+          <button class="btn ghost" id="intro-explore">Explore freely</button>
+        </div>
+        <p class="disclaimer">Unofficial fan concept and personal case study. Not affiliated with or endorsed by Disney. No official artwork, logos or models are used; attraction names appear only as references for where the ideas came from. Numbers are illustrative.</p>
+      </div>
+    </div>
+
+    <div class="loading" id="loading"><span>Warming up the guest model</span></div>
+    <footer class="foot">Unofficial fan concept. Not affiliated with Disney.</footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
