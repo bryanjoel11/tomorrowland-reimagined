@@ -19,10 +19,13 @@ const params = new URLSearchParams(location.search);
 
 // ---------- Renderer / scene ----------
 const stage = $('stage');
+const viewportEl = $('viewport');
+const W = () => viewportEl.clientWidth || window.innerWidth;
+const H = () => viewportEl.clientHeight || window.innerHeight;
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 let pixelRatio = Math.min(window.devicePixelRatio, coarse ? 1.5 : 1.75);
 renderer.setPixelRatio(pixelRatio);
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(W(), H());
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // Shadows refresh at ~20 Hz instead of every frame: rides move slowly enough.
@@ -34,27 +37,27 @@ renderer.toneMappingExposure = 1.15;
 stage.appendChild(renderer.domElement);
 
 const labelRenderer = new CSS2DRenderer();
-labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.setSize(W(), H());
 labelRenderer.domElement.className = 'label-layer';
-document.body.insertBefore(labelRenderer.domElement, stage.nextSibling);
+viewportEl.insertBefore(labelRenderer.domElement, stage.nextSibling);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0e1430, 0.0026);
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2400);
+scene.fog = new THREE.FogExp2(0x10243a, 0.0017);
+const camera = new THREE.PerspectiveCamera(45, W() / H(), 1, 2400);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.07;
 controls.screenSpacePanning = false;
 controls.minDistance = 22;
-controls.maxDistance = 380;
+controls.maxDistance = 560;
 controls.maxPolarAngle = 1.36;
 controls.rotateSpeed = 0.7;
 controls.zoomSpeed = 0.9;
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.55, 0.45, 0.85);
+const bloom = new UnrealBloomPass(new THREE.Vector2(W() / 2, H() / 2), 0.5, 0.45, 0.85);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 let useBloom = params.get('bloom') !== '0';
@@ -62,7 +65,7 @@ let useBloom = params.get('bloom') !== '0';
 const world = buildWorld(scene, { reducedMotion });
 
 // ---------- Guest flow ----------
-const AGENTS = 650;
+const AGENTS = 750;
 const startUp = params.get('mode') === 'upgraded';
 const sim = new Sim(AGENTS, startUp ? 1 : 0, 7);
 const simToday = new Sim(AGENTS, 0, 21);
@@ -79,14 +82,14 @@ for (let i = 0; i < 160 / SIM_DT; i++) {
 // ---------- Labels & pins ----------
 for (const l of AREA_LABELS) {
   const el = document.createElement('div');
-  el.className = 'area-label';
+  el.className = l.minor ? 'area-label minor' : 'area-label';
   el.textContent = l.text;
   const o = new CSS2DObject(el);
   o.position.set(l.x, l.y, l.z);
   scene.add(o);
 }
 
-const beamMat = new THREE.MeshBasicMaterial({ color: 0xff7a3d, transparent: true, opacity: 0.7 });
+const beamMat = new THREE.MeshBasicMaterial({ color: 0xff6b4a, transparent: true, opacity: 0.8 });
 const beamGeo = new THREE.CylinderGeometry(0.12, 0.12, 12, 6).translate(0, 6, 0);
 const pinBtns: HTMLButtonElement[] = [];
 UPGRADES.forEach((u, i) => {
@@ -113,11 +116,18 @@ UPGRADES.forEach((u, i) => {
 });
 
 // ---------- Camera helpers ----------
-const target0 = new THREE.Vector3(-14, 0, -2);
+const target0 = new THREE.Vector3(-6, 0, -22);
+const topDown = params.get('view') === 'top';
 function overviewPos() {
   const a = camera.aspect;
-  const k = a < 0.8 ? 1.7 : a < 1.2 ? 1.35 : 1;
-  return new THREE.Vector3(-14 - 46 * k, 150 * k, 128 * k);
+  const k = a < 0.8 ? 1.75 : a < 1.2 ? 1.35 : 1;
+  if (topDown) return topPos();
+  return new THREE.Vector3(target0.x - 70 * k, 190 * k, target0.z + 175 * k);
+}
+function topPos() {
+  const a = camera.aspect;
+  const k = a < 0.8 ? 1.75 : a < 1.2 ? 1.35 : 1;
+  return new THREE.Vector3(target0.x, 330 * k, target0.z + 0.01);
 }
 camera.position.copy(overviewPos());
 controls.target.copy(target0);
@@ -150,7 +160,7 @@ function setMode(m: 'today' | 'upgraded') {
   $('mode-up').classList.toggle('active', m === 'upgraded');
   $('mode-today').setAttribute('aria-pressed', String(m === 'today'));
   $('mode-up').setAttribute('aria-pressed', String(m === 'upgraded'));
-  beamMat.color.set(m === 'today' ? 0xff7a3d : 0x3ddcc0);
+  beamMat.color.set(m === 'today' ? 0xff6b4a : 0x1f8fb0);
   renderStats(true);
   if (current >= 0) renderReadout();
 }
@@ -170,7 +180,6 @@ function openCard(i: number, fly: boolean) {
   $('c-num').textContent = String(i + 1).padStart(2, '0');
   $('c-area').textContent = u.area;
   $('c-title').textContent = u.title;
-  $('c-insp').textContent = `Inspired by: ${u.inspiredBy}`;
   $('c-problem').innerHTML = fmtVerify(u.problem);
   $('c-fix').innerHTML = fmtVerify(u.fix);
   $('c-impact').innerHTML = u.impact.map((m) => `<dt>${m.metric}</dt><dd>${fmtVerify(m.value)}</dd>`).join('');
@@ -249,6 +258,7 @@ function renderStats(force = false) {
   const dw = (1 - statsU.avgWalkMin / Math.max(0.01, statsT.avgWalkMin)) * 100;
   const dc = (1 - statsU.crowdIndex / Math.max(0.01, statsT.crowdIndex)) * 100;
   $('s-delta').textContent = `Upgraded: ${dw.toFixed(0)}% shorter walks, ${dc.toFixed(0)}% less crowding`;
+  $('strip-delta').textContent = `${dc.toFixed(0)}%`;
 }
 function renderReadout() {
   if (current < 0) return;
@@ -258,11 +268,11 @@ function renderReadout() {
     const dt = statsT.zoneDensity[u.zone];
     const du = statsU.zoneDensity[u.zone];
     const pct = (d: number) => Math.min(100, (d / 1.1) * 100).toFixed(0);
-    el.innerHTML = `Live model readout: ${ZONE_LABELS[u.zone]} density
-      <div>Today <b>${dt.toFixed(2)}</b> guests/m²</div>
-      <div class="bar"><i style="width:${pct(dt)}%;background:linear-gradient(90deg,#ff7a3d,#ff3355)"></i></div>
-      <div>Upgraded <b>${du.toFixed(2)}</b> guests/m²</div>
-      <div class="bar"><i style="width:${pct(du)}%;background:#3ddcc0"></i></div>`;
+    el.innerHTML = `Live model readout: ${ZONE_LABELS[u.zone]}, density as a share of jam density
+      <div>Today <b>${pct(dt)}%</b></div>
+      <div class="bar"><i style="width:${pct(dt)}%;background:linear-gradient(90deg,#ff9f43,#ff6b4a)"></i></div>
+      <div>Upgraded <b>${pct(du)}%</b></div>
+      <div class="bar"><i style="width:${pct(du)}%;background:#1f8fb0"></i></div>`;
   } else {
     el.innerHTML = `Live model readout (whole land): crowding index <b>${statsT.crowdIndex.toFixed(0)}</b> today vs <b>${statsU.crowdIndex.toFixed(0)}</b> upgraded, avg walk <b>${fmtMin(statsT.avgWalkMin)}</b> vs <b>${fmtMin(statsU.avgWalkMin)}</b> min.`;
   }
@@ -297,43 +307,99 @@ $('btn-home').addEventListener('click', () => {
   flyTo(overviewPos(), target0.clone());
 });
 
-// ---------- Intro ----------
-const intro = $('intro');
-function hideIntro() {
-  intro.classList.add('hidden');
-}
-$('btn-about').addEventListener('click', () => intro.classList.remove('hidden'));
-$('intro-explore').addEventListener('click', hideIntro);
-$('intro-tour').addEventListener('click', () => {
-  hideIntro();
+// ---------- Welcome panel ----------
+const welcome = $('welcome');
+$('welcome-close').addEventListener('click', () => welcome.setAttribute('hidden', ''));
+$('welcome-tour').addEventListener('click', () => {
+  welcome.setAttribute('hidden', '');
   startTour();
 });
-intro.addEventListener('click', (e) => {
-  if (e.target === intro) hideIntro();
+let topView = false;
+$('btn-top').addEventListener('click', () => {
+  topView = !topView;
+  $('btn-top').setAttribute('aria-pressed', String(topView));
+  stopTour();
+  closeCard();
+  flyTo(topView ? topPos() : overviewPos(), target0.clone());
 });
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (!intro.classList.contains('hidden')) hideIntro();
-    else if (current >= 0) {
-      stopTour();
-      closeCard();
-    }
-  } else if (intro.classList.contains('hidden') && !(e.target instanceof HTMLButtonElement && e.key === ' ')) {
+  if (route !== 'explore') return;
+  if (e.key === 'Escape' && current >= 0) {
+    stopTour();
+    closeCard();
+  } else if (!(e.target instanceof HTMLButtonElement && e.key === ' ')) {
     if (e.key === 't' || e.key === 'T') setMode(mode === 'today' ? 'upgraded' : 'today');
     if (e.key === 'ArrowRight' && current >= 0 && current < UPGRADES.length - 1) openCard(current + 1, true);
     if (e.key === 'ArrowLeft' && current > 0) openCard(current - 1, true);
   }
 });
 
+// ---------- Upgrades page ----------
+$('up-list').innerHTML = UPGRADES.map(
+  (u, i) => `<li class="up-item">
+    <div class="up-num">${String(i + 1).padStart(2, '0')}</div>
+    <div><h2>${u.title}</h2><p class="up-area">${u.area}</p></div>
+    <div class="up-body">
+      <div><h3><span class="tag tag-problem">Problem</span></h3><p>${fmtVerify(u.problem)}</p></div>
+      <div><h3><span class="tag tag-fix">Fix</span></h3><p>${fmtVerify(u.fix)}</p></div>
+      <div class="up-full"><h3><span class="tag tag-impact">Expected impact</span></h3>
+        <dl class="up-impact">${u.impact.map((m) => `<dt>${m.metric}</dt><dd>${fmtVerify(m.value)}</dd>`).join('')}</dl></div>
+    </div>
+    <div class="up-actions"><a class="btn primary" href="#/explore/${i + 1}">See it in 3D</a></div>
+  </li>`,
+).join('');
+
+// ---------- Hash router ----------
+type Route = 'explore' | 'upgrades' | 'about';
+let route: Route = 'explore';
+const menuBtn = $('menu-btn');
+const nav = $('site-nav');
+menuBtn.addEventListener('click', () => {
+  const open = nav.classList.toggle('open');
+  menuBtn.setAttribute('aria-expanded', String(open));
+});
+function applyRoute() {
+  const parts = location.hash.replace(/^#\/?/, '').split('/');
+  const r = (['explore', 'upgrades', 'about'].includes(parts[0]) ? parts[0] : 'explore') as Route;
+  const prev = route;
+  route = r;
+  document.body.dataset.route = r;
+  for (const id of ['explore', 'upgrades', 'about']) {
+    const el = $('page-' + id);
+    if (id === r) el.removeAttribute('hidden');
+    else el.setAttribute('hidden', '');
+  }
+  nav.querySelectorAll('a').forEach((a) => {
+    const on = a.dataset.route === r;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  nav.classList.remove('open');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  if (r === 'explore') {
+    clock.getDelta();
+    resize();
+    const pin = Number(parts[1]);
+    if (pin && UPGRADES[pin - 1]) {
+      welcome.setAttribute('hidden', '');
+      openCard(pin - 1, true);
+    }
+  }
+  if (prev !== r || r !== 'explore') window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', applyRoute);
+
 // Screenshot / deep-link hooks: ?mode=upgraded&intro=0&pin=2
 if (params.get('mode') === 'upgraded') {
   setMode('upgraded');
   blendP = 1;
 }
-if (params.get('intro') === '0') hideIntro();
+if (params.get('welcome') === '0' || params.get('intro') === '0') welcome.setAttribute('hidden', '');
 if (params.get('pin')) {
   const i = Number(params.get('pin')) - 1;
   if (UPGRADES[i]) {
+    welcome.setAttribute('hidden', '');
     openCard(i, false);
     flyToPin(i, 0.001);
   }
@@ -341,8 +407,8 @@ if (params.get('pin')) {
 
 // ---------- Resize ----------
 function resize() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  const w = W();
+  const h = H();
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
@@ -351,7 +417,7 @@ function resize() {
   labelRenderer.setSize(w, h);
 }
 window.addEventListener('resize', resize);
-resize();
+new ResizeObserver(resize).observe(viewportEl);
 
 // ---------- Loop ----------
 const clock = new THREE.Clock();
@@ -364,6 +430,10 @@ let elapsed = 0;
 const viewOff = { x: 0, y: 0 };
 
 function frame() {
+  if (route !== 'explore') {
+    requestAnimationFrame(frame);
+    return;
+  }
   const dt = Math.min(0.05, clock.getDelta());
   elapsed += dt;
 
@@ -404,18 +474,20 @@ function frame() {
     if (flight.t >= 1) flight = null;
   }
   // Shift the projection so the focus sits beside (desktop) or above (phone) the open card.
+  const vw = W();
+  const vh = H();
   const narrow = window.innerWidth < 760;
-  const offX = current >= 0 && !narrow ? Math.min(200, window.innerWidth * 0.14) : 0;
-  const offY = current >= 0 && narrow ? window.innerHeight * 0.2 : 0;
+  const offX = current >= 0 && !narrow ? Math.min(200, vw * 0.14) : 0;
+  const offY = current >= 0 && narrow ? vh * 0.22 : 0;
   const kOff = Math.min(1, dt * (reducedMotion ? 30 : 4));
   viewOff.x += (offX - viewOff.x) * kOff;
   viewOff.y += (offY - viewOff.y) * kOff;
   if (Math.abs(viewOff.x) > 0.5 || Math.abs(viewOff.y) > 0.5) {
-    camera.setViewOffset(window.innerWidth, window.innerHeight, viewOff.x, viewOff.y, window.innerWidth, window.innerHeight);
+    camera.setViewOffset(vw, vh, viewOff.x, viewOff.y, vw, vh);
   } else if (camera.view && camera.view.enabled) camera.clearViewOffset();
   controls.update();
-  controls.target.x = THREE.MathUtils.clamp(controls.target.x, -140, 110);
-  controls.target.z = THREE.MathUtils.clamp(controls.target.z, -110, 100);
+  controls.target.x = THREE.MathUtils.clamp(controls.target.x, -160, 140);
+  controls.target.z = THREE.MathUtils.clamp(controls.target.z, -150, 110);
   controls.target.y = THREE.MathUtils.clamp(controls.target.y, 0, 30);
 
   renderer.info.autoReset = false;
@@ -447,4 +519,6 @@ function frame() {
 }
 
 $('loading').classList.add('hidden');
+applyRoute();
+resize();
 requestAnimationFrame(frame);

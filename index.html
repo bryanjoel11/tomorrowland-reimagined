@@ -3,102 +3,187 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#070B1A" />
+    <meta name="theme-color" content="#F5F8FB" />
     <title>Tomorrowland Reimagined</title>
-    <meta name="description" content="An interactive 3D fan concept of a retro-futurist theme park land, redesigned from an attractions operator's point of view. Today vs Upgraded, with a live guest-flow model." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%23FF7A3D'/%3E%3Cellipse cx='16' cy='16' rx='15' ry='5' fill='none' stroke='%237C5CFF' stroke-width='2' transform='rotate(-20 16 16)'/%3E%3C/svg%3E" />
+    <meta name="description" content="An interactive 3D model of Magic Kingdom's Tomorrowland, redesigned from an attractions operator's point of view. Today vs Upgraded, with a live guest-flow model." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='8' fill='%23FF6B4A'/%3E%3Cellipse cx='16' cy='16' rx='14.5' ry='5' fill='none' stroke='%231F8FB0' stroke-width='2.2' transform='rotate(-24 16 16)'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
-  <body data-mode="today">
-    <div id="stage" aria-label="3D model of the land. Drag to orbit, scroll or pinch to zoom."></div>
-
-    <header class="brand">
-      <div class="brand-title">Tomorrowland <span class="grad">Reimagined</span></div>
-      <div class="brand-sub"><span class="badge">Fan concept</span><span class="who"> by Bryan, ex-attractions operator</span></div>
+  <body data-mode="today" data-route="explore">
+    <header class="site-header">
+      <a class="wordmark" href="#/explore" aria-label="Tomorrowland Reimagined, home">
+        <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="10" fill="var(--coral)" />
+          <ellipse cx="24" cy="24" rx="21" ry="7.5" fill="none" stroke="var(--teal)" stroke-width="2.6" transform="rotate(-24 24 24)" />
+          <circle cx="40" cy="12" r="2.4" fill="var(--sky)" />
+        </svg>
+        <span class="wm-text"><span class="wm-top">Tomorrowland</span><span class="wm-bottom">Reimagined</span></span>
+      </a>
+      <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <a href="#/explore" data-route="explore">Explore</a>
+        <a href="#/upgrades" data-route="upgrades">Upgrades</a>
+        <a href="#/about" data-route="about">About the project</a>
+      </nav>
     </header>
 
-    <nav class="tools" aria-label="View options">
-      <button class="icon-btn" id="btn-about" title="About this concept" aria-label="About this concept">?</button>
-      <button class="icon-btn" id="btn-labels" title="Toggle area labels" aria-label="Toggle area labels" aria-pressed="true">Aa</button>
-      <button class="icon-btn" id="btn-pause" title="Pause guest flow" aria-label="Pause guest flow" aria-pressed="false">II</button>
-      <button class="icon-btn" id="btn-home" title="Reset view" aria-label="Reset view">&#8962;</button>
-    </nav>
+    <main>
+      <!-- ========== EXPLORE ========== -->
+      <section class="page page-explore" id="page-explore" aria-label="Explore the 3D land">
+        <div class="viewport" id="viewport">
+          <div id="stage" aria-label="3D model of Tomorrowland. Drag to orbit, scroll or pinch to zoom."></div>
 
-    <div class="dock">
-      <div class="seg" role="group" aria-label="Scenario">
-        <button id="mode-today" class="seg-btn active" aria-pressed="true">Today</button>
-        <button id="mode-up" class="seg-btn" aria-pressed="false">Upgraded</button>
-        <span class="seg-thumb" aria-hidden="true"></span>
-      </div>
-      <button class="btn primary" id="btn-tour">Guided tour</button>
-    </div>
+          <div class="welcome" id="welcome">
+            <button class="welcome-close" id="welcome-close" aria-label="Hide introduction">&#10005;</button>
+            <div class="eyebrow">Magic Kingdom / Tomorrowland</div>
+            <h1>The land, re-run by someone who ran it.</h1>
+            <p>A live 3D model of Tomorrowland with six operational upgrades. Flip between <b>Today</b> and <b>Upgraded</b> and watch the crowds move.</p>
+            <div class="welcome-actions">
+              <button class="btn primary" id="welcome-tour">Take the guided tour</button>
+              <a class="btn ghost" href="#/about">About the project</a>
+            </div>
+            <p class="hint">Drag to orbit · scroll or pinch to zoom · right-drag or two fingers to pan</p>
+          </div>
 
-    <section class="stats" id="stats" aria-label="Guest flow model">
-      <button class="stats-head" id="stats-toggle" aria-expanded="true">
-        <span class="live-dot" aria-hidden="true"></span> Guest flow model
-        <span class="chev" aria-hidden="true">&#9662;</span>
-      </button>
-      <div class="stats-body">
-        <table>
-          <thead><tr><th></th><th class="col-today">Today</th><th class="col-up">Upgraded</th></tr></thead>
-          <tbody>
-            <tr><td>Avg walk (min)</td><td class="col-today mono" id="s-walk-t">-</td><td class="col-up mono" id="s-walk-u">-</td></tr>
-            <tr><td>Crowding idx</td><td class="col-today mono" id="s-crowd-t">-</td><td class="col-up mono" id="s-crowd-u">-</td></tr>
-            <tr><td>Hottest spot</td><td class="col-today small" id="s-hot-t">-</td><td class="col-up small" id="s-hot-u">-</td></tr>
-          </tbody>
-        </table>
-        <div class="delta" id="s-delta"></div>
-        <p class="fine">Simple agent model, 650 guests, illustrative only. Not park data. Dot colour shows local crowding.</p>
-      </div>
-    </section>
+          <div class="tools" aria-label="View options">
+            <button class="icon-btn" id="btn-labels" title="Toggle labels" aria-label="Toggle labels" aria-pressed="true">Aa</button>
+            <button class="icon-btn" id="btn-pause" title="Pause guest flow" aria-label="Pause guest flow" aria-pressed="false">II</button>
+            <button class="icon-btn" id="btn-home" title="Reset view" aria-label="Reset view">&#8962;</button>
+            <button class="icon-btn" id="btn-top" title="Top-down map view" aria-label="Top-down map view">&#9638;</button>
+          </div>
 
-    <aside class="card" id="card" aria-live="polite" hidden>
-      <div class="card-top">
-        <span class="card-num mono" id="c-num">01</span>
-        <span class="card-area" id="c-area"></span>
-        <button class="icon-btn small" id="c-close" aria-label="Close">&#10005;</button>
-      </div>
-      <h2 id="c-title"></h2>
-      <p class="inspired" id="c-insp"></p>
-      <div class="card-scroll">
-        <h3><span class="tag tag-problem">Problem</span></h3>
-        <p id="c-problem"></p>
-        <h3><span class="tag tag-fix">Fix</span></h3>
-        <p id="c-fix"></p>
-        <h3><span class="tag tag-impact">Expected impact</span></h3>
-        <dl id="c-impact"></dl>
-        <div class="readout" id="c-readout"></div>
-        <p class="fine">Items marked [verify] are working assumptions to confirm before presenting as fact.</p>
-      </div>
-      <div class="card-nav">
-        <button class="btn ghost" id="c-prev">Prev</button>
-        <span class="mono" id="c-count">1 / 6</span>
-        <button class="btn primary" id="c-next">Next</button>
-      </div>
-    </aside>
+          <section class="stats" id="stats" aria-label="Guest flow model">
+            <button class="stats-head" id="stats-toggle" aria-expanded="true">
+              <span class="live-dot" aria-hidden="true"></span> Guest flow model
+              <span class="chev" aria-hidden="true">&#9662;</span>
+            </button>
+            <div class="stats-body">
+              <table>
+                <thead><tr><th></th><th class="col-today">Today</th><th class="col-up">Upgraded</th></tr></thead>
+                <tbody>
+                  <tr><td>Avg walk (min)</td><td class="col-today mono" id="s-walk-t">-</td><td class="col-up mono" id="s-walk-u">-</td></tr>
+                  <tr><td>Crowding index</td><td class="col-today mono" id="s-crowd-t">-</td><td class="col-up mono" id="s-crowd-u">-</td></tr>
+                  <tr><td>Hottest spot</td><td class="col-today small" id="s-hot-t">-</td><td class="col-up small" id="s-hot-u">-</td></tr>
+                </tbody>
+              </table>
+              <div class="delta" id="s-delta"></div>
+              <p class="fine">Simple agent model, 750 guests, illustrative only. Dot colour shows local crowding.</p>
+            </div>
+          </section>
 
-    <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
-      <div class="intro-panel">
-        <div class="eyebrow">Fan concept / operations case study</div>
-        <h1 id="intro-title">Tomorrowland <span class="grad">Reimagined</span></h1>
-        <p>I worked attractions in Tomorrowland at Magic Kingdom. Every shift I watched the same things go wrong in the same places: the coaster exit jamming up, the queue merge spilling onto the walkway, mobile-order guests parked in the middle of the promenade.</p>
-        <p>This is the land the way I would run it. It is a stylized model built entirely in code. Flip between <strong>Today</strong> and <strong>Upgraded</strong>, open the six pins to see each problem, the fix and what I expect it to move, and watch the guest dots spread out when the pinch points open up.</p>
-        <ul class="intro-hints">
-          <li><b>Drag</b> to orbit, <b>scroll or pinch</b> to zoom, <b>right-drag or two fingers</b> to pan</li>
-          <li><b>Pins</b> open the Problem / Fix / Impact cards</li>
-        </ul>
-        <div class="intro-actions">
-          <button class="btn primary" id="intro-tour">Take the guided tour</button>
-          <button class="btn ghost" id="intro-explore">Explore freely</button>
+          <div class="dock">
+            <div class="seg" role="group" aria-label="Scenario">
+              <button id="mode-today" class="seg-btn active" aria-pressed="true">Today</button>
+              <button id="mode-up" class="seg-btn" aria-pressed="false">Upgraded</button>
+              <span class="seg-thumb" aria-hidden="true"></span>
+            </div>
+            <button class="btn primary" id="btn-tour">Guided tour</button>
+          </div>
+
+          <aside class="card" id="card" aria-live="polite" hidden>
+            <div class="card-top">
+              <span class="card-num mono" id="c-num">01</span>
+              <span class="card-area" id="c-area"></span>
+              <button class="icon-btn small" id="c-close" aria-label="Close">&#10005;</button>
+            </div>
+            <h2 id="c-title"></h2>
+            <div class="card-scroll">
+              <h3><span class="tag tag-problem">Problem</span></h3>
+              <p id="c-problem"></p>
+              <h3><span class="tag tag-fix">Fix</span></h3>
+              <p id="c-fix"></p>
+              <h3><span class="tag tag-impact">Expected impact</span></h3>
+              <dl id="c-impact"></dl>
+              <div class="readout" id="c-readout"></div>
+            </div>
+            <div class="card-nav">
+              <button class="btn ghost" id="c-prev">Prev</button>
+              <span class="mono" id="c-count">1 / 6</span>
+              <button class="btn primary" id="c-next">Next</button>
+            </div>
+          </aside>
+
+          <div class="loading" id="loading"><span>Warming up the guest model…</span></div>
         </div>
-        <p class="disclaimer">Unofficial fan concept and personal case study. Not affiliated with or endorsed by Disney. No official artwork, logos or models are used; attraction names appear only as references for where the ideas came from. Numbers are illustrative.</p>
-      </div>
-    </div>
 
-    <div class="loading" id="loading"><span>Warming up the guest model</span></div>
-    <footer class="foot">Unofficial fan concept. Not affiliated with Disney.</footer>
+        <div class="strip">
+          <div class="strip-item"><span class="strip-num">6</span><span>operational upgrades, each with a problem, a fix and the metric it should move</span></div>
+          <div class="strip-item"><span class="strip-num">750</span><span>modelled guests walking the real Tomorrowland walkway layout</span></div>
+          <div class="strip-item"><span class="strip-num" id="strip-delta">-</span><span>less crowding in the model once the upgrades land</span></div>
+          <a class="btn ghost strip-cta" href="#/upgrades">Read the upgrades</a>
+        </div>
+      </section>
+
+      <!-- ========== UPGRADES ========== -->
+      <section class="page page-upgrades" id="page-upgrades" aria-labelledby="up-title" hidden>
+        <div class="page-hero">
+          <div class="container">
+            <div class="eyebrow">The proposal</div>
+            <h1 id="up-title">Six upgrades for Tomorrowland</h1>
+            <p class="lede">Each one starts from something I watched go wrong on shift. Every card lists the problem, the fix, and what I expect it to move: throughput, wait accuracy, guest flow or per-cap spend. Items tagged <span class="verify">[verify]</span> are working assumptions I still need to confirm.</p>
+          </div>
+        </div>
+        <div class="container">
+          <ol class="up-list" id="up-list"></ol>
+        </div>
+      </section>
+
+      <!-- ========== ABOUT ========== -->
+      <section class="page page-about" id="page-about" aria-labelledby="about-title" hidden>
+        <div class="page-hero">
+          <div class="container">
+            <div class="eyebrow">About the project</div>
+            <h1 id="about-title">Why I rebuilt Tomorrowland</h1>
+          </div>
+        </div>
+        <div class="container prose">
+          <p class="lede">I worked attractions in Tomorrowland at Magic Kingdom. Every shift I watched the same things go wrong in the same places: exits jamming up, queue merges spilling onto the walkway, mobile-order guests parked in the middle of the promenade.</p>
+          <p>This project is the land the way I would run it. It is a 3D model laid out to match the real Tomorrowland, from the hub bridge and Rocket Tower Plaza to Space Mountain, TRON and the Speedway, with six changes I would make from the operator's side. Flip between <b>Today</b> and <b>Upgraded</b> to see each change in place, and watch a simple guest-flow model react.</p>
+
+          <div class="about-grid">
+            <div class="about-card">
+              <h3>What it shows</h3>
+              <p>Operations insight turned into a proposal. Each upgrade names the guest or operator pain, the intervention, and the metric it should move. Two are revenue plays (an add-on window at mobile-order pickup, a cart at a high-volume exit); the rest protect capacity, which is revenue too.</p>
+            </div>
+            <div class="about-card">
+              <h3>How the guest model works</h3>
+              <p>750 guests walk a graph of the land's walkways, picking weighted next stops. Walking speed falls as a stretch gets crowded. In Upgraded, the pinch points widen, standing crowds move off the path, and guests use live wait info to route around hot spots. It is illustrative, not calibrated to park data.</p>
+            </div>
+            <div class="about-card">
+              <h3>How it is built</h3>
+              <p>Vite, TypeScript and three.js. Every building, ride and path is generated in code: no downloaded models, logos or official artwork. Instancing keeps the guests, track and trees fast, and the site is fully static.</p>
+            </div>
+          </div>
+
+          <h2>What is next</h2>
+          <p>The current six pins are placeholders positioned on the real layout. Next I am replacing them with my own list from the floor, confirming the [verify] items, and tightening the layout details I flagged in the project notes.</p>
+          <div class="about-actions">
+            <a class="btn primary" href="#/explore">Explore the land</a>
+            <a class="btn ghost" href="#/upgrades">Read the upgrades</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container foot-inner">
+        <a class="wordmark small" href="#/explore" aria-label="Tomorrowland Reimagined, home">
+          <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="24" cy="24" r="10" fill="var(--coral)" />
+            <ellipse cx="24" cy="24" rx="21" ry="7.5" fill="none" stroke="var(--teal)" stroke-width="2.6" transform="rotate(-24 24 24)" />
+          </svg>
+          <span class="wm-text"><span class="wm-top">Tomorrowland</span><span class="wm-bottom">Reimagined</span></span>
+        </a>
+        <nav class="foot-nav" aria-label="Footer">
+          <a href="#/explore">Explore</a>
+          <a href="#/upgrades">Upgrades</a>
+          <a href="#/about">About the project</a>
+        </nav>
+        <p class="foot-line">Personal concept project. Not affiliated with Disney.</p>
+      </div>
+    </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -7,7 +7,7 @@ import { NODES, EDGES, DESTS, ZoneKey, DestDef } from './layout';
 const D_JAM = 1.1;
 const MIN_SPEED = 0.18;
 /** Guests standing still in the walkway today (mobile-order crowd, queue spill). */
-const STANDING: Partial<Record<ZoneKey, number>> = { pickup: 26, merge: 10 };
+const STANDING: Partial<Record<ZoneKey, number>> = { pickup: 26, merge: 12 };
 /** Sim runs fast-forwarded: ~5 m/s on screen vs ~1.25 m/s real walking. */
 export const REAL_TIME_FACTOR = 4;
 

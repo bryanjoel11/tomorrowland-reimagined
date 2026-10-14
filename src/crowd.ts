@@ -5,7 +5,7 @@ import { Sim } from './sim';
 import { EDGES, L, nodeById } from './layout';
 
 const PALETTE = [0xdfe6ff, 0xb9c6ff, 0x9fe8da, 0xd6c8ff, 0xfff1d6, 0xa9d4ff].map((c) => new THREE.Color(c));
-const HOT = new THREE.Color(0xff7a3d);
+const HOT = new THREE.Color(0xff8a3d);
 const JAM = new THREE.Color(0xff3355);
 
 function heatTexture() {
@@ -69,15 +69,17 @@ export class CrowdView {
       this.stand.up.push(u);
     };
     for (let i = 0; i < 26; i++) {
-      const t = new THREE.Vector2(L.pickupToday.x - 8 + r() * 14, L.pickupToday.z - 0.5 + r() * 9);
+      const t = new THREE.Vector2(L.pickupToday.x - 8 + r() * 16, L.pickupToday.z - 3 + r() * 7);
       const u = new THREE.Vector2(L.pickupUp.x - 4 + r() * 8, L.pickupUp.z + 4.5 + r() * 5);
       add(t, u);
     }
-    const dra = nodeById('DRa');
-    const drin = nodeById('DRin');
+    // Buzz Lightyear queue spill onto the plaza walkway (today) -> inside the merge portal.
+    const bz = nodeById('BZin');
+    const cs = nodeById('CS');
     for (let i = 0; i < 12; i++) {
-      const t = new THREE.Vector2(dra.x + 1 + r() * 7, dra.z - 4 + r() * 6);
-      const u = new THREE.Vector2(drin.x - 3 + (i % 2) * 5.5 + r() * 0.8, drin.z + 2 + (i >> 1) * 0.9);
+      const k = 0.15 + r() * 0.55;
+      const t = new THREE.Vector2(bz.x + (cs.x - bz.x) * k + (r() - 0.5) * 3, bz.z + (cs.z - bz.z) * k + (r() - 0.5) * 3);
+      const u = new THREE.Vector2(bz.x - 3 + (i % 2) * 6 + r() * 0.6, bz.z + 3 + (i >> 1) * 0.9);
       add(t, u);
     }
     this.movableStand = this.stand.today.length;

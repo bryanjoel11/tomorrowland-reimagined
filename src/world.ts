@@ -6,14 +6,14 @@ import { EDGES, L, nodeById, EdgeDef } from './layout';
 const C = {
   white: 0xe9edf8,
   silver: 0xaab3cf,
-  ground: 0x141a36,
-  walk: 0x5d6690,
-  plaza: 0x6a73a0,
-  blue: 0x3d7bff,
-  ember: 0xff7a3d,
-  emberGlow: 0xffb15c,
-  nebula: 0x7c5cff,
-  aurora: 0x3ddcc0,
+  ground: 0x14263a,
+  walk: 0x5f7896,
+  plaza: 0x6f88a6,
+  blue: 0x4fa8ff,
+  ember: 0xff6b4a,
+  emberGlow: 0xffa64d,
+  nebula: 0x34c3d6,
+  aurora: 0x2ec4b6,
   foliage: 0x2a8a7e,
   asphalt: 0x262b44,
 };
@@ -34,7 +34,7 @@ export const mats = {
   foliage: new THREE.MeshStandardMaterial({ color: C.foliage, roughness: 0.8, flatShading: true }),
   water: new THREE.MeshStandardMaterial({ color: 0x0c1f52, emissive: 0x081640, emissiveIntensity: 0.5, roughness: 0.15, metalness: 0.4 }),
   sail: new THREE.MeshStandardMaterial({ color: 0xf4f6ff, roughness: 0.6, side: THREE.DoubleSide, flatShading: true }),
-  dark: new THREE.MeshStandardMaterial({ color: 0x0e1430, roughness: 0.7 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x13222f, roughness: 0.7 }),
 };
 
 function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, cast = true, receive = true) {
@@ -81,10 +81,10 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
       fragmentShader: `varying vec3 vP;
         void main(){
           float h = clamp(vP.y, -0.1, 1.0);
-          vec3 top = vec3(0.027,0.043,0.10);
-          vec3 mid = vec3(0.10,0.08,0.26);
-          vec3 hor = vec3(0.55,0.24,0.20);
-          vec3 fogc = vec3(0.055,0.078,0.19);
+          vec3 top = vec3(0.025,0.06,0.11);
+          vec3 mid = vec3(0.07,0.17,0.30);
+          vec3 hor = vec3(0.80,0.42,0.28);
+          vec3 fogc = vec3(0.063,0.141,0.227);
           vec3 c = mix(hor, mid, smoothstep(0.02, 0.2, h));
           c = mix(c, top, smoothstep(0.14, 0.6, h));
           c = mix(fogc, c, smoothstep(-0.02, 0.03, h));
@@ -107,13 +107,15 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xdfe6ff, size: 1.6, sizeAttenuation: false, fog: false })));
 
   // ---------- Lights ----------
-  scene.add(new THREE.HemisphereLight(0x8090ff, 0x1a1030, 1.0));
+  scene.add(new THREE.HemisphereLight(0x9cc0ff, 0x1a2230, 1.0));
   const moon = new THREE.DirectionalLight(0xd2dcff, 2.0);
-  moon.position.set(-90, 160, 70);
+  moon.position.set(-100, 190, 60);
+  moon.target.position.set(0, 0, -25);
+  scene.add(moon.target);
   moon.castShadow = true;
   moon.shadow.mapSize.set(2048, 2048);
   const sc = moon.shadow.camera;
-  sc.left = -150; sc.right = 150; sc.top = 130; sc.bottom = -130; sc.near = 10; sc.far = 420;
+  sc.left = -200; sc.right = 200; sc.top = 180; sc.bottom = -180; sc.near = 10; sc.far = 520;
   moon.shadow.bias = -0.0006;
   moon.shadow.normalBias = 0.6;
   moon.shadow.radius = 4;
@@ -125,22 +127,28 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   plazaLight.position.set(0, 18, 0);
   scene.add(plazaLight);
   const domeLight = new THREE.PointLight(0x5d8bff, 300, 80, 1.6);
-  domeLight.position.set(40, 10, -16);
+  domeLight.position.set(60, 12, -30);
   scene.add(domeLight);
 
-  // ---------- Ground, moat, hub ----------
+  // ---------- Ground, moat, castle hub ----------
   const ground = mesh(new THREE.CircleGeometry(1400, 72), mats.ground, false, true);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  const moat = mesh(new THREE.PlaneGeometry(L.moat.w, 360), mats.water, false, true);
+  // The hub moat is a ring around the central plaza; the bridge crosses it.
+  const moat = mesh(new THREE.RingGeometry(L.moat.r0, L.moat.r1, 96, 1, -1.25, 2.5), mats.water, false, true);
   moat.rotation.x = -Math.PI / 2;
-  moat.position.set(L.moat.x, 0.04, 0);
+  moat.rotation.z = 0;
+  moat.position.set(L.moat.x, 0.04, L.moat.z);
   scene.add(moat);
 
-  const hub = mesh(new THREE.CylinderGeometry(22, 22, 0.14, 48), mats.plaza, false, true);
-  hub.position.set(-124, 0.07, 0);
+  const hub = mesh(new THREE.CylinderGeometry(L.hub.r, L.hub.r, 0.14, 64), mats.plaza, false, true);
+  hub.position.set(L.hub.x, 0.07, L.hub.z);
   scene.add(hub);
+  const hubRing = mesh(new THREE.TorusGeometry(L.hub.r - 1, 0.18, 6, 96), mats.blueSoft, false, false);
+  hubRing.rotation.x = Math.PI / 2;
+  hubRing.position.set(L.hub.x, 0.2, L.hub.z);
+  scene.add(hubRing);
 
   // ---------- Walkways ----------
   const edgeWidth = (e: EdgeDef, u: number) => e.w + ((e.wUp ?? e.w) - e.w) * u;
@@ -204,15 +212,17 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   // ---------- Hub bridge ----------
   const bridgeLen = L.bridge.x1 - L.bridge.x0;
   const bx = (L.bridge.x0 + L.bridge.x1) / 2;
-  scene.add(box(bridgeLen, 0.8, L.bridge.w, mats.white, bx, 0.3, 0));
+  const bz = L.bridge.z;
+  scene.add(box(bridgeLen, 0.8, L.bridge.w, mats.white, bx, 0.3, bz));
   for (const side of [-1, 1]) {
-    scene.add(box(bridgeLen, 1.1, 0.4, mats.silver, bx, 1.2, side * (L.bridge.w / 2 - 0.2)));
-    scene.add(box(bridgeLen, 0.12, 0.5, mats.blueGlow, bx, 1.8, side * (L.bridge.w / 2 - 0.2)));
-    for (let i = 0; i <= 3; i++) {
-      const x = L.bridge.x0 + (bridgeLen * i) / 3;
-      scene.add(cyl(0.2, 0.25, 6, 8, mats.silver, x, 3.6, side * (L.bridge.w / 2 + 0.3)));
+    scene.add(box(bridgeLen, 1.1, 0.4, mats.silver, bx, 1.2, bz + side * (L.bridge.w / 2 - 0.2)));
+    scene.add(box(bridgeLen, 0.12, 0.5, mats.blueGlow, bx, 1.8, bz + side * (L.bridge.w / 2 - 0.2)));
+    for (let i = 0; i <= 2; i++) {
+      const x = L.bridge.x0 + (bridgeLen * i) / 2;
+      const z = bz + side * (L.bridge.w / 2 + 0.3);
+      scene.add(cyl(0.2, 0.25, 6, 8, mats.silver, x, 3.6, z));
       const globe = mesh(new THREE.IcosahedronGeometry(0.7, 1), mats.warmGlow, false, false);
-      globe.position.set(x, 6.9, side * (L.bridge.w / 2 + 0.3));
+      globe.position.set(x, 6.9, z);
       scene.add(globe);
       const halo = mesh(new THREE.TorusGeometry(1.1, 0.08, 6, 24), mats.silver, false, false);
       halo.position.copy(globe.position);
@@ -220,14 +230,14 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
       scene.add(halo);
     }
   }
-  // Entrance gateway: two leaning pylons
+  // Entrance gateway: two leaning pylons at the land side of the bridge.
   for (const side of [-1, 1]) {
     const p = mesh(new THREE.CylinderGeometry(0.4, 1.4, 22, 6), mats.white);
-    p.position.set(-70, 10, side * 11);
+    p.position.set(L.bridge.x1 + 2, 10, bz + side * 11);
     p.rotation.x = side * 0.18;
     scene.add(p);
     const tip = mesh(new THREE.IcosahedronGeometry(0.9, 1), mats.emberGlow, false, false);
-    tip.position.set(-70, 21, side * 13);
+    tip.position.set(L.bridge.x1 + 2, 21, bz + side * 13);
     scene.add(tip);
   }
 
@@ -313,12 +323,17 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   });
 
   // ---------- People mover elevated track ----------
+  // Route (see LAYOUT-NOTES.md): station -> over the Space Mountain entrance
+  // plaza -> across the railroad into Space Mountain -> past the Carousel of
+  // Progress -> over the former Galaxy Palace site -> south show building
+  // (Buzz / Laugh Floor) -> across the promenade -> north show building -> station.
   const trackPts = [
-    [-16, 5], [0, 6.5], [16, 5], [25, -9], [35, -30], [52, -44], [70, -52], [82, -36], [72, -14],
-    [58, 4], [42, 40], [26, 60], [4, 66], [-18, 62], [-40, 54], [-58, 40], [-46, 16], [-30, 6],
+    [-16, 5], [0, 6.5], [16, 5], [32, -4], [52, -14], [72, -22], [90, -44], [108, -30], [96, -2],
+    [80, 18], [84, 46], [70, 72], [42, 82], [12, 70], [-16, 48], [-44, 44], [-66, 28], [-68, 0],
+    [-60, -30], [-40, -40], [-24, -24], [-22, -4],
   ].map(([x, z]) => new THREE.Vector3(x, 9.6, z));
   const track = new THREE.CatmullRomCurve3(trackPts, true, 'centripetal');
-  const SEG = 260;
+  const SEG = 440;
   const beamGeo = new THREE.BoxGeometry(1, 1, 1);
   const beams = new THREE.InstancedMesh(beamGeo, mats.white, SEG);
   const glows = new THREE.InstancedMesh(beamGeo, mats.blueGlow, SEG);
@@ -346,7 +361,8 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   const inside = (p: THREE.Vector3) =>
     Math.hypot(p.x - L.dome.x, p.z - L.dome.z) < L.dome.r - 1 ||
     Math.hypot(p.x, p.z) < 13 ||
-    (Math.abs(p.x - L.darkRide.x) < L.darkRide.w / 2 && Math.abs(p.z - L.darkRide.z) < L.darkRide.d / 2);
+    (p.x > L.southBldg.x0 && p.x < L.southBldg.x1 && p.z > L.southBldg.z0 && p.z < L.southBldg.z1) ||
+    (p.x > L.northBldg.x0 && p.x < L.northBldg.x1 && p.z > L.northBldg.z0 && p.z < L.northBldg.z1);
   for (let d = 0; d < totalLen; d += 13) {
     const p = track.getPointAt(d / totalLen);
     if (!inside(p)) colPos.push(p);
@@ -359,7 +375,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   });
   scene.add(cols);
 
-  const TRAINS = 9;
+  const TRAINS = 15;
   const CARS = 4;
   const carBody = new THREE.InstancedMesh(new THREE.BoxGeometry(3.3, 1.7, 2.6), mats.white, TRAINS * CARS);
   const carWin = new THREE.InstancedMesh(new THREE.BoxGeometry(3.36, 0.45, 2.66), mats.blueGlow, TRAINS * CARS);
@@ -388,11 +404,11 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     carWin.instanceMatrix.needsUpdate = true;
   });
 
-  // ---------- Indoor coaster dome ----------
+  // ---------- Space Mountain (outside the railroad berm) ----------
   const dome = new THREE.Group();
   dome.position.set(L.dome.x, 0, L.dome.z);
   const prof = [
-    [26, 0], [25.4, 3], [23, 8.5], [19, 14], [13.5, 19], [7.5, 22.4], [2.6, 24], [0, 24.3],
+    [24, 0], [23.4, 3.5], [21, 10], [17, 16.5], [12, 22], [6.5, 26], [2.2, 27.8], [0, 28.1],
   ].map(([r, y]) => new THREE.Vector2(r, y));
   dome.add(mesh(new THREE.LatheGeometry(prof, 28), mats.white));
   const ribCurve = new THREE.CatmullRomCurve3(prof.map((p) => new THREE.Vector3(p.x + 0.35, p.y + 0.1, 0)));
@@ -402,64 +418,166 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     r.rotation.y = (i / 14) * Math.PI * 2;
     dome.add(r);
   }
-  const base = mesh(new THREE.TorusGeometry(26.3, 0.45, 6, 96), mats.blueGlow, false, false);
+  const base = mesh(new THREE.TorusGeometry(24.3, 0.45, 6, 96), mats.blueGlow, false, false);
   base.rotation.x = Math.PI / 2;
   base.position.y = 0.8;
   dome.add(base);
   for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + 0.4;
-    const sp = mesh(new THREE.ConeGeometry(0.9, 34, 6), mats.white);
-    sp.position.set(Math.cos(a) * 29, 17, Math.sin(a) * 29);
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const sp = mesh(new THREE.ConeGeometry(0.9, 36, 6), mats.white);
+    sp.position.set(Math.cos(a) * 27, 18, Math.sin(a) * 27);
     dome.add(sp);
     const tip = mesh(new THREE.IcosahedronGeometry(0.8, 1), mats.emberGlow, false, false);
-    tip.position.set(Math.cos(a) * 29, 34.5, Math.sin(a) * 29);
+    tip.position.set(Math.cos(a) * 27, 36.5, Math.sin(a) * 27);
     dome.add(tip);
   }
   scene.add(dome);
-  // Entrance + exit portals (facing the nodes)
-  const portal = (nx: number, nz: number, glow: THREE.Material) => {
-    const dx = nx - L.dome.x;
-    const dz = nz - L.dome.z;
-    const a = Math.atan2(dz, dx);
-    const g = new THREE.Group();
-    g.position.set(L.dome.x + Math.cos(a) * 25, 0, L.dome.z + Math.sin(a) * 25);
-    g.rotation.y = -a;
-    g.add(box(7, 6, 8, mats.white, 1.5, 3, 0));
-    g.add(box(0.3, 4.6, 5.4, mats.dark, 5.05, 2.5, 0));
-    g.add(box(0.4, 0.4, 8.4, glow, 5.1, 6.1, 0));
-    scene.add(g);
-  };
-  const dmIn = nodeById('DMin');
-  const dmEx = nodeById('DMex');
-  portal(dmIn.x, dmIn.z, mats.blueGlow);
-  portal(dmEx.x, dmEx.z, mats.emberGlow);
+  // Entrance: covered walkway from the entrance plaza, under the railroad.
+  const smIn = nodeById('SMin');
+  const entr = new THREE.Group();
+  entr.position.set(smIn.x, 0, smIn.z);
+  entr.rotation.y = -Math.atan2(L.dome.z - smIn.z, L.dome.x - smIn.x);
+  entr.add(box(10, 5, 8, mats.white, 4, 2.5, 0));
+  entr.add(box(10.4, 0.4, 8.4, mats.blueGlow, 4, 5.2, 0));
+  entr.add(box(0.3, 4, 5, mats.dark, -1.05, 2, 0));
+  scene.add(entr);
+  // Exit through the Launch Depot shop, between Space Mountain and TRON.
+  const ld = L.launchDepot;
+  const depot = new THREE.Group();
+  depot.position.set(ld.x, 0, ld.z);
+  depot.add(box(14, 6, 10, mats.white, 0, 3, 0));
+  depot.add(box(14.4, 0.4, 10.4, mats.emberGlow, 0, 6.2, 0));
+  depot.add(box(0.3, 3.4, 6, mats.blueGlow, -7.1, 2.4, 0));
+  scene.add(depot);
+  // Exit tunnel from the dome to the depot.
+  const exitTube = box(1, 3.6, 5, mats.silver, 0, 1.8, 0);
+  const ex0 = new THREE.Vector2(ld.x + 7, ld.z);
+  const ex1 = new THREE.Vector2(L.dome.x - 16, L.dome.z - 18);
+  exitTube.scale.x = ex0.distanceTo(ex1);
+  exitTube.position.set((ex0.x + ex1.x) / 2, 1.8, (ex0.y + ex1.y) / 2);
+  exitTube.rotation.y = -Math.atan2(ex1.y - ex0.y, ex1.x - ex0.x);
+  scene.add(exitTube);
 
-  // ---------- Speedway ----------
+  // ---------- Walt Disney World Railroad (berm line) ----------
+  const rail = new THREE.CatmullRomCurve3(L.railroad.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+  const railLen = rail.getLength();
+  const TIES = Math.floor(railLen / 2.2);
+  const ties = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 0.25, 4.2), mats.dark, TIES);
+  const railPts: THREE.Vector3[] = [];
+  for (let i = 0; i < TIES; i++) {
+    const u = i / TIES;
+    const p = rail.getPointAt(u);
+    const tan = rail.getTangentAt(u);
+    q.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tan);
+    m4.compose(new THREE.Vector3(p.x, 0.3, p.z), q, new THREE.Vector3(1, 1, 1));
+    ties.setMatrixAt(i, m4);
+    railPts.push(p);
+  }
+  scene.add(ties);
+  for (const side of [-1.3, 1.3]) {
+    const pts2 = railPts.map((p, i) => {
+      const tan = rail.getTangentAt(i / TIES);
+      return new THREE.Vector3(p.x - tan.z * side, 0.5, p.z + tan.x * side);
+    });
+    scene.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts2), 300, 0.12, 4), mats.silver, false, false));
+  }
+  // Raised berm along the line
+  const bermPts = L.railroad.map(([x, z]) => new THREE.Vector3(x, 0, z));
+  const berm = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bermPts), 200, 5, 6), mats.ground, false, true);
+  berm.scale.y = 0.12;
+  scene.add(berm);
+
+  // ---------- TRON Lightcycle / Run canopy ----------
+  const tr = L.tron;
+  const canopyGeo = new THREE.PlaneGeometry(tr.w, tr.d, 48, 10);
+  canopyGeo.rotateX(-Math.PI / 2);
+  const cp = canopyGeo.attributes.position as THREE.BufferAttribute;
+  const wave = (x: number, z: number) => 13 + Math.sin(x * 0.09) * 2.4 + Math.cos(x * 0.05 + z * 0.12) * 1.4 - (z / tr.d) * 3;
+  for (let i = 0; i < cp.count; i++) cp.setY(i, wave(cp.getX(i), cp.getZ(i)));
+  canopyGeo.computeVertexNormals();
+  const canopyMat = new THREE.MeshStandardMaterial({ color: 0x2f5878, metalness: 0.6, roughness: 0.3, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.88 });
+  const canopy = new THREE.Group();
+  canopy.position.set(tr.x, 0, tr.z);
+  canopy.rotation.y = 0.12;
+  canopy.add(mesh(canopyGeo, canopyMat));
+  // Glowing ribs running along the canopy (they cycle colour at night).
+  const ribMats: THREE.MeshStandardMaterial[] = [];
+  for (let k = 0; k <= 6; k++) {
+    const z = -tr.d / 2 + (k / 6) * tr.d;
+    const pts3: THREE.Vector3[] = [];
+    for (let x = -tr.w / 2; x <= tr.w / 2 + 0.01; x += 2) pts3.push(new THREE.Vector3(x, wave(x, z) + 0.15, z));
+    const mat = new THREE.MeshStandardMaterial({ color: 0x3d7bff, emissive: 0x3d7bff, emissiveIntensity: 2.2 });
+    ribMats.push(mat);
+    canopy.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts3), 60, 0.22, 4), mat, false, false));
+  }
+  for (let x = -tr.w / 2 + 4; x < tr.w / 2; x += 11) {
+    for (const z of [-tr.d / 2 + 2, tr.d / 2 - 2]) {
+      const h = wave(x, z);
+      const col = cyl(0.35, 0.5, h, 6, mats.silver, x, h / 2, z);
+      col.rotation.z = 0.12;
+      canopy.add(col);
+    }
+  }
+  // Launch track under the canopy, then out past the berm.
+  const tronCurve = new THREE.CatmullRomCurve3(
+    [[-30, 0], [0, 4], [30, -2], [44, -24], [20, -46], [-20, -42], [-40, -20]].map(([x, z]) => new THREE.Vector3(x, 3.2, z)),
+    true,
+  );
+  canopy.add(mesh(new THREE.TubeGeometry(tronCurve, 160, 0.5, 6, true), mats.blueGlow, false, false));
+  const tronLen = tronCurve.getLength();
+  const cycles = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.7, 2.2, 2, 6).rotateZ(Math.PI / 2), mats.emberGlow, 7);
+  canopy.add(cycles);
+  // Show building outside the berm.
+  canopy.add(box(44, 14, 22, mats.dark, 2, 7, -40));
+  scene.add(canopy);
+  let tronPhase = 0;
+  animators.push((dt, time) => {
+    tronPhase = (tronPhase + dt * 22 * motion) % tronLen;
+    for (let i = 0; i < 7; i++) {
+      const u = ((tronPhase - i * 3) / tronLen + 1) % 1;
+      const p = tronCurve.getPointAt(u);
+      q.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tronCurve.getTangentAt(u));
+      m4.compose(p.setY(4.2), q, new THREE.Vector3(1, 1, 1));
+      cycles.setMatrixAt(i, m4);
+    }
+    cycles.instanceMatrix.needsUpdate = true;
+    const hue = (time * 0.04 * motion) % 1;
+    ribMats.forEach((m, k) => {
+      const c = new THREE.Color().setHSL((0.58 + hue + k * 0.02) % 1, 0.9, 0.55);
+      m.color.copy(c);
+      m.emissive.copy(c);
+    });
+  });
+  // Elevated TRON walkway from the entrance under the canopy.
+  const trN = nodeById('TR');
+  scene.add(box(8, 0.6, 14, mats.white, trN.x, 2.2, trN.z - 9));
+
+  // ---------- Tomorrowland Speedway ----------
   const sw = L.speedway;
   const ellipse = (rx: number, rz: number, cw: boolean) => {
     const s = new THREE.Path();
     s.absellipse(0, 0, rx, rz, 0, Math.PI * 2, cw, 0);
     return s;
   };
-  const trackShape = new THREE.Shape(ellipse(sw.rx + 3.4, sw.rz + 3.4, false).getPoints(80));
+  const trackShape = new THREE.Shape(ellipse(sw.rx + 3.4, sw.rz + 3.4, false).getPoints(90));
   trackShape.holes.push(ellipse(sw.rx - 3.4, sw.rz - 3.4, true));
-  const swTrack = mesh(new THREE.ShapeGeometry(trackShape, 80), mats.asphalt, false, true);
+  const swTrack = mesh(new THREE.ShapeGeometry(trackShape, 90), mats.asphalt, false, true);
   swTrack.rotation.x = -Math.PI / 2;
   swTrack.position.set(sw.x, 0.07, sw.z);
   scene.add(swTrack);
   for (const [rx, rz] of [[sw.rx + 3.6, sw.rz + 3.6], [sw.rx - 3.6, sw.rz - 3.6]]) {
     const curve = new THREE.EllipseCurve(0, 0, rx, rz, 0, Math.PI * 2, false, 0);
-    const p3 = curve.getPoints(120).map((p) => new THREE.Vector3(p.x, 0.5, p.y));
-    const rail = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p3, true), 120, 0.22, 4, true), mats.silver, false, false);
-    rail.position.set(sw.x, 0, sw.z);
-    scene.add(rail);
+    const p3 = curve.getPoints(140).map((p) => new THREE.Vector3(p.x, 0.5, p.y));
+    const railM = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p3, true), 140, 0.22, 4, true), mats.silver, false, false);
+    railM.position.set(sw.x, 0, sw.z);
+    scene.add(railM);
   }
   const infield = mesh(new THREE.CircleGeometry(1, 48), mats.foliage, false, true);
   infield.scale.set(sw.rx - 3.4, sw.rz - 3.4, 1);
   infield.rotation.x = -Math.PI / 2;
   infield.position.set(sw.x, 0.05, sw.z);
   scene.add(infield);
-  const swCarColors = [0xff7a3d, 0x3d7bff, 0xffd166, 0x3ddcc0, 0xe8ecff, 0x7c5cff];
+  const swCarColors = [0xff6b4a, 0x4fa8ff, 0xffd166, 0x2ec4b6, 0xf2f5f8, 0xff9f43, 0x5bb8e8, 0xff6b4a];
   const swCars: THREE.Group[] = [];
   const swCarGeo = mergeGeometries([
     new THREE.BoxGeometry(2.8, 0.7, 1.5).translate(0, 0.6, 0),
@@ -468,30 +586,23 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   ])!;
   swCarColors.forEach((col) => {
     const g = new THREE.Group();
-    const m = mesh(swCarGeo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.2, flatShading: true }));
-    g.add(m);
+    g.add(mesh(swCarGeo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.2, flatShading: true })));
     scene.add(g);
     swCars.push(g);
   });
   animators.push((_dt, time) => {
     swCars.forEach((g, i) => {
-      const a = time * (0.16 + i * 0.012) * motion + i * 1.05;
+      const a = time * (0.1 + i * 0.008) * motion + i * 0.8;
       const lane = i % 2 ? 1.4 : -1.4;
-      const x = Math.cos(a) * (sw.rx + lane);
-      const z = Math.sin(a) * (sw.rz + lane);
-      g.position.set(sw.x + x, 0.05, sw.z + z);
-      const tx = -Math.sin(a) * (sw.rx + lane);
-      const tz = Math.cos(a) * (sw.rz + lane);
-      g.rotation.y = -Math.atan2(tz, tx);
+      g.position.set(sw.x + Math.cos(a) * (sw.rx + lane), 0.05, sw.z + Math.sin(a) * (sw.rz + lane));
+      g.rotation.y = -Math.atan2(Math.cos(a) * (sw.rz + lane), -Math.sin(a) * (sw.rx + lane));
     });
   });
-  // Speedway loading station + queue switchbacks
+  // Loading station at the Tomorrowland (east) end + queue switchbacks.
   const sq = L.speedwayQueue;
-  scene.add(box(14, 5, 7, mats.white, sq.x - 14, 2.5, sq.z - 6));
-  scene.add(box(14.4, 0.4, 7.4, mats.blueGlow, sq.x - 14, 5.2, sq.z - 6));
-  for (let i = 0; i < 6; i++) {
-    scene.add(box(15, 0.9, 0.18, mats.silver, sq.x, 0.5, sq.z - 5 + i * 2));
-  }
+  scene.add(box(16, 5, 7, mats.white, sq.x - 4, 2.5, sq.z - 11));
+  scene.add(box(16.4, 0.4, 7.4, mats.blueGlow, sq.x - 4, 5.2, sq.z - 11));
+  for (let i = 0; i < 6; i++) scene.add(box(15, 0.9, 0.18, mats.silver, sq.x, 0.5, sq.z - 5 + i * 2));
   // Shade sails (upgrade) - rise from the ground.
   const shade = new THREE.Group();
   shade.position.set(sq.x, 0, sq.z);
@@ -499,9 +610,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([-9, 6.5, -7, 9, 5.2, -7, 0, 8.4, 7, 9, 5.2, -7, 9, 7.6, 7, 0, 8.4, 7, -9, 6.5, -7, 0, 8.4, 7, -9, 5.0, 7], 3));
   sailGeo.computeVertexNormals();
   shade.add(mesh(sailGeo, mats.sail));
-  for (const [x, z, h] of [[-9, -7, 6.5], [9, -7, 5.2], [0, 7, 8.4], [9, 7, 7.6], [-9, 7, 5]]) {
-    shade.add(cyl(0.18, 0.22, h, 6, mats.silver, x, h / 2, z));
-  }
+  for (const [x, z, h] of [[-9, -7, 6.5], [9, -7, 5.2], [0, 7, 8.4], [9, 7, 7.6], [-9, 7, 5]]) shade.add(cyl(0.18, 0.22, h, 6, mats.silver, x, h / 2, z));
   for (const x of [-5, 1, 7]) shade.add(box(1.8, 1.1, 0.12, mats.auroraGlow, x, 2.1, -1.8));
   scene.add(shade);
   blends.push((u) => {
@@ -509,7 +618,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     shade.scale.set(1, Math.max(0.001, u), 1);
   });
 
-  // ---------- Carousel theater ----------
+  // ---------- Walt Disney's Carousel of Progress ----------
   const th = L.theater;
   const theater = new THREE.Group();
   theater.position.set(th.x, 0, th.z);
@@ -525,15 +634,14 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     f.rotation.y = -a;
     theater.add(f);
   }
-  const thNode = nodeById('TH');
-  const thA = Math.atan2(thNode.z - th.z, thNode.x - th.x);
+  const copN = nodeById('COP');
+  const thA = Math.atan2(copN.z - th.z, copN.x - th.x);
   const thEnt = new THREE.Group();
   thEnt.rotation.y = -thA;
   thEnt.add(box(5, 0.5, 12, mats.white, th.r + 2.5, 6, 0));
   thEnt.add(box(0.4, 0.3, 12, mats.warmGlow, th.r + 5, 5.8, 0));
   for (const z of [-5.5, 5.5]) thEnt.add(cyl(0.25, 0.25, 6, 6, mats.silver, th.r + 4.5, 3, z));
   theater.add(thEnt);
-  scene.add(theater);
   const turntable = new THREE.Group();
   turntable.position.y = 13.95;
   for (let i = 0; i < 6; i++) {
@@ -544,39 +652,46 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     turntable.add(s);
   }
   theater.add(turntable);
+  scene.add(theater);
   animators.push((dt) => {
     turntable.rotation.y += dt * 0.2 * motion;
   });
+  // Former Galaxy Palace Theater site south of the Carousel: open plaza.
+  const gp = mesh(new THREE.CylinderGeometry(14, 14, 0.12, 40), mats.plaza, false, true);
+  gp.position.set(40, 0.06, 82);
+  scene.add(gp);
 
-  // ---------- Arcade / blaster dark ride ----------
-  const dr = L.darkRide;
-  const darkRide = new THREE.Group();
-  darkRide.position.set(dr.x, 0, dr.z);
-  darkRide.add(box(dr.w, 12, dr.d, mats.white, 0, 6, 0));
-  darkRide.add(box(dr.w + 0.6, 0.5, dr.d + 0.6, mats.silver, 0, 12.2, 0));
-  for (let i = 0; i < 9; i++) {
-    const f = box(0.6, 13, 3.4, mats.silver, -dr.w / 2 + 2 + i * 3.5, 6.5, -dr.d / 2 - 1.3);
+  // ---------- South show building: Laugh Floor + Buzz Lightyear ----------
+  const sb = L.southBldg;
+  const sbW = sb.x1 - sb.x0;
+  const sbD = sb.z1 - sb.z0;
+  scene.add(box(sbW, 11, sbD, mats.white, (sb.x0 + sb.x1) / 2, 5.5, (sb.z0 + sb.z1) / 2));
+  scene.add(box(sbW + 0.6, 0.5, sbD + 0.6, mats.silver, (sb.x0 + sb.x1) / 2, 11.2, (sb.z0 + sb.z1) / 2));
+  // Laugh Floor facade (west)
+  scene.add(box(L.laughFloorSplit - sb.x0 - 2, 2, 0.6, mats.warmGlow, (sb.x0 + L.laughFloorSplit) / 2, 8.5, sb.z0 - 0.3));
+  for (let i = 0; i < 4; i++) scene.add(cyl(1.2, 1.2, 0.4, 16, mats.blueGlow, sb.x0 + 4 + i * 5, 5, sb.z0 - 0.3).rotateX(Math.PI / 2));
+  // Buzz facade (east): angled fins + planet sign
+  for (let i = 0; i < 7; i++) {
+    const x = L.laughFloorSplit + 3 + i * 4;
+    const f = box(0.6, 12.5, 3.2, mats.silver, x, 6.2, sb.z0 - 1.2);
     f.rotation.y = 0.5;
-    darkRide.add(f);
-    const g = box(0.25, 10, 0.25, i % 2 ? mats.nebulaGlow : mats.blueGlow, -dr.w / 2 + 2.9 + i * 3.5, 6.5, -dr.d / 2 - 2.6);
-    darkRide.add(g);
+    scene.add(f);
+    scene.add(box(0.25, 9.5, 0.25, i % 2 ? mats.nebulaGlow : mats.blueGlow, x + 0.9, 6.2, sb.z0 - 2.4));
   }
   const drSign = new THREE.Group();
-  drSign.position.set(6, 16, -dr.d / 2 + 2);
-  const signPlanet = mesh(new THREE.IcosahedronGeometry(2.6, 1), mats.nebulaGlow);
-  drSign.add(signPlanet);
+  drSign.position.set(sb.x1 - 10, 15, sb.z0 + 4);
+  drSign.add(mesh(new THREE.IcosahedronGeometry(2.6, 1), mats.nebulaGlow));
   const signRing = mesh(new THREE.TorusGeometry(4.2, 0.25, 6, 40), mats.emberGlow, false, false);
   signRing.rotation.x = 1.2;
   drSign.add(signRing);
-  darkRide.add(drSign);
-  scene.add(darkRide);
+  scene.add(drSign);
   animators.push((dt) => {
     signRing.rotation.z += dt * 0.6 * motion;
   });
-  // Today: entrance mouth right on the walkway. Upgraded: recessed two-lane merge portal.
-  const drIn = nodeById('DRin');
+  // Upgraded: recessed two-lane return-time merge portal at the Buzz entrance.
+  const bzIn = nodeById('BZin');
   const mergePortal = new THREE.Group();
-  mergePortal.position.set(drIn.x, 0, drIn.z + 1.5);
+  mergePortal.position.set(bzIn.x, 0, bzIn.z + 2);
   mergePortal.add(box(10, 0.5, 6, mats.white, 0, 5.5, -1));
   for (const x of [-4.6, 0, 4.6]) mergePortal.add(cyl(0.22, 0.22, 5.5, 6, mats.silver, x, 2.75, -3.6));
   mergePortal.add(box(4, 0.5, 0.2, mats.blueGlow, -2.3, 4.6, -3.9));
@@ -588,35 +703,28 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     mergePortal.scale.setScalar(Math.max(0.001, u));
   });
 
-  // ---------- Quick-service restaurant ----------
-  const qs = L.qsr;
-  const qsr = new THREE.Group();
-  qsr.position.set(qs.x, 0, qs.z);
-  qsr.add(box(qs.w, 7, qs.d, mats.white, 0, 3.5, 0));
-  const vault = mesh(new THREE.CylinderGeometry(9.5, 9.5, qs.w + 3, 20, 1, false, 0, Math.PI), mats.silver);
+  // ---------- North show building: former Stitch theater, Merchant of Venus, Cosmic Ray's ----------
+  const nb = L.northBldg;
+  const nbW = nb.x1 - nb.x0;
+  const nbD = nb.z1 - nb.z0;
+  scene.add(box(nbW, 10, nbD, mats.white, (nb.x0 + nb.x1) / 2, 5, (nb.z0 + nb.z1) / 2));
+  scene.add(box(nbW + 0.6, 0.5, nbD + 0.6, mats.silver, (nb.x0 + nb.x1) / 2, 10.2, (nb.z0 + nb.z1) / 2));
+  for (let i = 0; i < 10; i++) scene.add(box(0.5, 10, 1.4, mats.silver, nb.x0 + 3 + i * 5.6, 5, nb.z1 + 0.6));
+  // Cosmic Ray's: vaulted roof over the east end + glowing band
+  const vault = mesh(new THREE.CylinderGeometry(9, 9, 24, 20, 1, false, 0, Math.PI), mats.silver);
   vault.rotation.set(0, 0, Math.PI / 2);
-  vault.scale.set(0.45, 1, 1);
-  vault.position.y = 7;
-  qsr.add(vault);
-  qsr.add(box(qs.w + 3.2, 0.35, 0.4, mats.warmGlow, 0, 7.1, -qs.d / 2 - 1.5));
-  // Today's pickup counter on the promenade side.
-  const counter = box(8, 2.4, 1.6, mats.emberGlow, 4, 1.2, -qs.d / 2 - 0.9);
-  qsr.add(counter);
-  scene.add(qsr);
+  vault.scale.set(0.5, 1, 1);
+  vault.position.set(nb.x1 - 13, 10, (nb.z0 + nb.z1) / 2 + 2);
+  scene.add(vault);
+  scene.add(box(26, 0.35, 0.4, mats.warmGlow, nb.x1 - 13, 9.4, nb.z1 + 1.4));
+  // Today's mobile-order pickup counter, facing the promenade.
+  const counter = box(8, 2.4, 1.6, mats.emberGlow, L.pickupToday.x, 1.2, nb.z1 + 1);
+  scene.add(counter);
   blends.push((u) => {
     counter.scale.y = Math.max(0.01, 1 - u);
     counter.visible = u < 0.99;
   });
-  // Patio tables
-  const umbGeo = new THREE.ConeGeometry(2.2, 0.9, 8);
-  for (const [x, z] of [[-30, 30], [-28, 37], [-35, 38], [-66, 30], [-68, 36]]) {
-    scene.add(cyl(0.9, 0.9, 1.1, 10, mats.silver, x, 0.55, z));
-    scene.add(cyl(0.08, 0.08, 3, 5, mats.silver, x, 1.6, z));
-    const u = mesh(umbGeo, mats.white);
-    u.position.set(x, 3.3, z);
-    scene.add(u);
-  }
-  // Upgraded pickup pavilion on the side patio.
+  // Upgraded pickup pavilion on the quieter north side (facing the Speedway).
   const pk = L.pickupUp;
   const pavilion = new THREE.Group();
   pavilion.position.set(pk.x, 0, pk.z);
@@ -630,7 +738,28 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     pavilion.scale.setScalar(Math.max(0.001, u));
   });
 
-  // ---------- Merch shop ----------
+  // ---------- Tomorrowland Terrace (south of the bridge, by the moat) ----------
+  const tt = L.terrace;
+  const terr = new THREE.Group();
+  terr.position.set(tt.x, 0, tt.z);
+  terr.add(box(12, 4, 20, mats.white, 0, 2, 0));
+  const terrRoof = mesh(new THREE.CylinderGeometry(9, 9, 24, 3, 1), mats.silver);
+  terrRoof.rotation.set(Math.PI / 2, 0, 0);
+  terrRoof.scale.set(1, 1, 0.22);
+  terrRoof.position.y = 6.5;
+  terr.add(terrRoof);
+  for (const z of [-10, -3.3, 3.3, 10]) terr.add(cyl(0.3, 0.3, 6, 6, mats.silver, -7, 3, z));
+  scene.add(terr);
+  const umbGeo = new THREE.ConeGeometry(2.2, 0.9, 8);
+  for (const [x, z] of [[-30, 6 - 14], [-24, -13], [tt.x - 9, tt.z - 6], [tt.x - 9, tt.z + 4]]) {
+    scene.add(cyl(0.9, 0.9, 1.1, 10, mats.silver, x, 0.55, z));
+    scene.add(cyl(0.08, 0.08, 3, 5, mats.silver, x, 1.6, z));
+    const um = mesh(umbGeo, mats.white);
+    um.position.set(x, 3.3, z);
+    scene.add(um);
+  }
+
+  // ---------- Shops and kiosks ----------
   const shopG = new THREE.Group();
   shopG.position.set(L.shop.x, 0, L.shop.z);
   shopG.add(box(14, 6, 10, mats.white, 0, 3, 0));
@@ -641,11 +770,18 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   shopG.add(shopRoof);
   shopG.add(box(10, 3.2, 0.2, mats.warmGlow, 0, 2.2, -5.1));
   scene.add(shopG);
+  const st = L.starTraders;
+  scene.add(box(14, 6, 10, mats.white, st.x, 3, st.z));
+  scene.add(box(14.4, 0.4, 10.4, mats.blueGlow, st.x, 6.2, st.z));
+  scene.add(box(9, 2.6, 0.2, mats.warmGlow, st.x, 2.2, st.z - 5.1));
+  const lp = L.lunchingPad;
+  scene.add(cyl(3, 3.4, 3.2, 12, mats.white, lp.x, 1.6, lp.z));
+  scene.add(cyl(4, 4, 0.4, 12, mats.emberGlow, lp.x, 3.4, lp.z));
 
-  // ---------- Merch cart (upgrade) ----------
+  // ---------- Merch cart (upgrade) at the PeopleMover exit ----------
   const cartN = nodeById('CART');
   const cart = new THREE.Group();
-  cart.position.set(cartN.x - 3.5, 0, cartN.z + 2.5);
+  cart.position.set(cartN.x + 3, 0, cartN.z + 3);
   cart.add(box(3.2, 1.6, 1.8, mats.white, 0, 1.3, 0));
   for (const [x, z] of [[-1.2, -0.95], [1.2, -0.95], [-1.2, 0.95], [1.2, 0.95]]) {
     const wh = cyl(0.45, 0.45, 0.25, 10, mats.dark, x, 0.45, z);
@@ -663,7 +799,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
 
   // ---------- Wayfinding totems (upgrade) ----------
   const totems = new THREE.Group();
-  const totemSpots = [[-60, -9, 0], [-60, 9, Math.PI], [-38, -7, 0.4], [-4, -26, 0.8], [26, 4, -1]];
+  const totemSpots = [[-64, -4, 0], [-64, 16, Math.PI], [-26, -6, 0.4], [10, -32, 0.8], [36, 2, -1]];
   for (const [x, z, r] of totemSpots) {
     const t = new THREE.Group();
     t.position.set(x, 0, z);
@@ -678,11 +814,12 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     totems.visible = u > 0.01;
     totems.scale.set(1, Math.max(0.001, u), 1);
   });
-  // Back-path signage arch (unsigned today).
-  const n1 = nodeById('N1');
+  // Signage arch on the back path behind the Speedway queue (unsigned today).
+  const n0 = nodeById('N0');
+  const t1n = nodeById('T1');
   const arch = new THREE.Group();
-  arch.position.set(n1.x, 0, n1.z);
-  arch.rotation.y = 0.6;
+  arch.position.set(n0.x + (t1n.x - n0.x) * 0.25, 0, n0.z + (t1n.z - n0.z) * 0.25);
+  arch.rotation.y = -Math.atan2(t1n.z - n0.z, t1n.x - n0.x) + Math.PI / 2;
   arch.add(cyl(0.25, 0.25, 5, 6, mats.silver, -3.4, 2.5, 0));
   arch.add(cyl(0.25, 0.25, 5, 6, mats.silver, 3.4, 2.5, 0));
   arch.add(box(7.4, 0.9, 0.3, mats.blueGlow, 0, 5, 0));
@@ -692,9 +829,9 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     arch.scale.set(1, Math.max(0.001, u), 1);
   });
 
-  // ---------- Planters at the dome exit pinch (slide back when widened) ----------
-  const j0 = nodeById('J0');
-  const j1 = nodeById('J1');
+  // ---------- Planters at the Space Mountain exit / TRON pinch ----------
+  const j0 = nodeById('T0');
+  const j1 = nodeById('T1');
   const pdx = j1.x - j0.x;
   const pdz = j1.z - j0.z;
   const plen = Math.hypot(pdx, pdz);
@@ -753,17 +890,28 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   scene.add(poles, globes, halos);
 
   // ---------- Trees around the edge of the land ----------
+  const inRect = (x: number, z: number, x0: number, x1: number, z0: number, z1: number, pad: number) =>
+    x > x0 - pad && x < x1 + pad && z > z0 - pad && z < z1 + pad;
   const blocked = (x: number, z: number) => {
     if (Math.hypot(x, z) < 30) return true;
-    if (Math.hypot(x - L.dome.x, z - L.dome.z) < 34) return true;
+    if (Math.hypot(x - L.dome.x, z - L.dome.z) < 32) return true;
     if (Math.hypot(x - th.x, z - th.z) < 21) return true;
-    if (Math.abs(x - sw.x) < sw.rx + 8 && Math.abs(z - sw.z) < sw.rz + 8) return true;
-    if (Math.abs(x - dr.x) < dr.w / 2 + 5 && Math.abs(z - dr.z) < dr.d / 2 + 6) return true;
-    if (Math.abs(x - qs.x) < qs.w / 2 + 6 && Math.abs(z - qs.z) < qs.d / 2 + 6) return true;
-    if (Math.abs(x - L.moat.x) < 14) return true;
+    if (Math.hypot(x - L.hub.x, z - L.hub.z) < L.moat.r1 + 3) return true;
+    if (Math.abs(x - sw.x) < sw.rx + 7 && Math.abs(z - sw.z) < sw.rz + 7) return true;
+    if (inRect(x, z, sb.x0, sb.x1, sb.z0, sb.z1, 5)) return true;
+    if (inRect(x, z, nb.x0, nb.x1, nb.z0, nb.z1, 5)) return true;
+    if (inRect(x, z, tr.x - tr.w / 2, tr.x + tr.w / 2, tr.z - tr.d / 2 - 52, tr.z + tr.d / 2, 4)) return true;
+    if (Math.abs(x - tt.x) < 12 && Math.abs(z - tt.z) < 14) return true;
     if (Math.abs(x - L.shop.x) < 11 && Math.abs(z - L.shop.z) < 9) return true;
+    if (Math.abs(x - st.x) < 11 && Math.abs(z - st.z) < 9) return true;
+    if (Math.abs(x - ld.x) < 11 && Math.abs(z - ld.z) < 9) return true;
     if (Math.abs(x - pk.x) < 7 && Math.abs(z - pk.z) < 7) return true;
-    if (Math.abs(x - sq.x) < 24 && Math.abs(z - sq.z) < 12) return true;
+    if (Math.abs(x - sq.x) < 14 && Math.abs(z - sq.z) < 18) return true;
+    if (Math.hypot(x - 40, z - 82) < 16) return true;
+    for (let i = 0; i <= 60; i++) {
+      const p = rail.getPointAt(i / 60);
+      if (Math.hypot(x - p.x, z - p.z) < 7) return true;
+    }
     for (const e of EDGES) {
       const a = nodeById(e.a);
       const b = nodeById(e.b);
@@ -779,10 +927,9 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   const treeSpots: [number, number, number][] = [];
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 1400 && treeSpots.length < 240; i++) {
-    const x = -140 + rnd() * 250;
-    const z = -110 + rnd() * 200;
-    if (Math.hypot(x + 10, z) > 140) continue;
+  for (let i = 0; i < 3000 && treeSpots.length < 340; i++) {
+    const x = -130 + rnd() * 290;
+    const z = -160 + rnd() * 270;
     if (blocked(x, z)) continue;
     treeSpots.push([x, z, 0.5 + rnd() * 0.6]);
   }
