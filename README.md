@@ -1,17 +1,17 @@
 # Tomorrowland Reimagined
 
-**An interactive 3D model of Magic Kingdom's Tomorrowland, re-run by someone who used to run its attractions.**
+**An interactive 3D model of Magic Kingdom's Tomorrowland, reimagined by a lifelong fan.**
 
-I worked attractions in Tomorrowland at Magic Kingdom. This site turns what I saw on the floor into a visual proposal you can explore in the browser. The land is shown with four upgrades in place. Open a pin or take the guided tour to see what changed and why.
+I have loved Tomorrowland all my life, and I worked there for a while too, but I'm a fan first. This site is a fan's and designer's concept, based on the park as any guest can experience it, turned into a visual proposal you can explore in the browser. The land is shown with four upgrades in place. Open a pin or take the guided tour to see what changed and why.
 
 Personal concept project. Not affiliated with Disney. Every building, ride and path is generated in code: no logos, official artwork or downloaded models.
 
 ## Why it matters to a hiring manager
 
-- **Operations insight turned into a product proposal.** Each upgrade says what changes in the land, why it is worth doing, and what it adds for guests and for the operation.
+- **A concept turned into a product proposal.** Each upgrade says what changes in the land, why it is worth doing, and what it adds for guests.
 - **Commercial thinking.** The proposals add capacity (a dual racing coaster and a reopened theater), weather-proof indoor attractions, inclusive capacity on the PeopleMover, and a story-driven refresh of the land's icon with a merchandise tie-in.
 - **Show, don't tell.** Every change is built in 3D, in place, on a layout that matches the real land.
-- **Scoped like a PM would.** Factual claims that still need checking are tagged `[verify]`, and open layout questions are listed in `LAYOUT-NOTES.md`.
+- **Scoped like a PM would.** Open layout questions are listed in `LAYOUT-NOTES.md`.
 
 ## The four upgrades
 

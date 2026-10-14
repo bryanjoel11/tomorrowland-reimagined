@@ -19,7 +19,7 @@ export interface Upgrade {
   cam: { x: number; y: number; z: number };
 }
 
-// Bryan's four upgrades. Anything tagged [verify] is a factual claim still to confirm.
+// Bryan's four upgrades.
 export const UPGRADES: Upgrade[] = [
   {
     id: 'sugar-rush',
@@ -91,11 +91,11 @@ export const UPGRADES: Upgrade[] = [
     what:
       'The former Stitch theater reopens as a refreshed, family-friendly in-the-round show with a new Stitch animatronic and projection-mapped effects. There are no shoulder restraints and the scare level is lower, so all ages can ride. Outside it gets a lit facade, an open entrance and a covered queue facing the promenade.',
     why:
-      'A large show building sits dark on prime promenade frontage, right across from Monsters, Inc. Laugh Floor [verify]. That is indoor capacity the land is not using, and the shuttered frontage makes the west end of Tomorrowland feel empty.',
+      'Stitch is one of the most popular characters in the parks, and the theater is a large indoor space right on the main promenade. An all-ages show there gives families another air-conditioned attraction, brings a favorite character back to the land, and gives the west end of Tomorrowland a lively frontage.',
     adds: [
       'Indoor, air-conditioned seats that absorb crowds in rain or heat',
       'Guests drawn off the promenade and into a show',
-      'An all-ages show with a popular character instead of a dark frontage',
+      'An all-ages show with a popular character, right on the promenade',
     ],
     cam: { x: -6, y: 34, z: 58 },
   },

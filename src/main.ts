@@ -139,8 +139,8 @@ function flyToPin(i: number, dur = 1.8) {
 let current = -1;
 let touring = false;
 const card = $('card');
-function fmtVerify(s: string) {
-  return s.replace(/\[verify\]/g, '<span class="verify">[verify]</span>');
+function fmt(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 }
 function openCard(i: number, fly: boolean) {
   current = i;
@@ -148,9 +148,9 @@ function openCard(i: number, fly: boolean) {
   $('c-num').textContent = String(i + 1).padStart(2, '0');
   $('c-area').textContent = u.area;
   $('c-title').textContent = u.title;
-  $('c-what').innerHTML = fmtVerify(u.what);
-  $('c-why').innerHTML = fmtVerify(u.why);
-  $('c-adds').innerHTML = u.adds.map((a) => `<li>${fmtVerify(a)}</li>`).join('');
+  $('c-what').innerHTML = fmt(u.what);
+  $('c-why').innerHTML = fmt(u.why);
+  $('c-adds').innerHTML = u.adds.map((a) => `<li>${fmt(a)}</li>`).join('');
   const story = $('c-story');
   if (u.story) {
     story.hidden = false;
@@ -253,9 +253,9 @@ $('up-list').innerHTML = UPGRADES.map(
     <div class="up-num">${String(i + 1).padStart(2, '0')}</div>
     <div><h2>${u.title}</h2><p class="up-area">${u.area}</p></div>
     <div class="up-body">
-      <div><h3><span class="tag tag-fix">What changed</span></h3><p>${fmtVerify(u.what)}</p></div>
-      <div><h3><span class="tag tag-problem">Why</span></h3><p>${fmtVerify(u.why)}</p>
-        <h3><span class="tag tag-impact">What it adds</span></h3><ul class="up-adds">${u.adds.map((a) => `<li>${fmtVerify(a)}</li>`).join('')}</ul></div>
+      <div><h3><span class="tag tag-fix">What changed</span></h3><p>${fmt(u.what)}</p></div>
+      <div><h3><span class="tag tag-problem">Why</span></h3><p>${fmt(u.why)}</p>
+        <h3><span class="tag tag-impact">What it adds</span></h3><ul class="up-adds">${u.adds.map((a) => `<li>${fmt(a)}</li>`).join('')}</ul></div>
       ${u.story ? `<div class="up-full up-story"><h3><span class="tag tag-story">The story</span></h3><p class="story-title">${u.story.title}</p><p>${u.story.text}</p></div>` : ''}
     </div>
     <div class="up-actions"><a class="btn primary" href="#/explore/${i + 1}">See it in 3D</a></div>
@@ -361,7 +361,7 @@ function frame() {
     controls.target.lerpVectors(flight.t0, flight.t1, k);
     if (flight.t >= 1) flight = null;
   }
-  // Shift the projection so the focus sits beside (desktop) or above (phone) the open card.
+  // Offset the projection so the focus sits beside (desktop) or above (phone) the open card.
   const vw = W();
   const vh = H();
   const narrow = window.innerWidth < 760;
