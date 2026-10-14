@@ -29,9 +29,9 @@ export const UPGRADES: Upgrade[] = [
     pos: { x: -24, z: -94 },
     pinY: 30,
     what:
-      'The Speedway is gone. In its footprint stands a candy-themed show building with glass upper walls and a vaulted glass roof, and inside it an indoor dual racing coaster themed to the candy-racing world of Sugar Rush (Wreck-It Ralph). Two trains launch side by side out of one station, race through banked turns and an airtime hill, and trade the lead along the way. The candy facade, entrance and queue sit outside on the walkway side.',
+      'The Speedway is gone. In its footprint stands a candy-themed show building with glass upper walls and a vaulted glass roof, and inside it an indoor dual racing coaster themed to the candy-racing world of Sugar Rush (Wreck-It Ralph). Two trains launch side by side out of one station, race through banked turns and an airtime hill, and trade the lead along the way. The candy facade, entrance and queue sit outside on the walkway side. The PeopleMover now passes through the building too, giving riders a preview of the race.',
     why:
-      'The Speedway fills one of the largest plots in the land but loads one car at a time [verify], so it moves few guests for its size, and it runs outdoors through Florida heat, rain and lightning holds. A racing coaster puts the same land to work with two loading sides and a ride guests want to repeat.',
+      'The Speedway fills one of the largest plots in the land with a dated experience, and it runs outdoors through Florida heat, rain and lightning holds. A racing coaster puts the same land to work with two loading sides, an indoor ride that keeps running in any weather, and a race guests want to repeat.',
     adds: [
       'Two loading sides, so far more guests per hour than one track',
       'Indoors, so it keeps running through rain and heat',
@@ -50,7 +50,7 @@ export const UPGRADES: Upgrade[] = [
     what:
       'Every train runs redesigned cars with a wheelchair bay, a wide side door and a fold-down ramp. On the station deck a step-free boarding zone, reached by a new elevator, is where the moving belt and the train slow to a stop for a few seconds so a guest can roll on and off. The rest of the platform keeps loading as it always has.',
     why:
-      'At the moment guests step from a moving platform into a moving car, so guests who use wheelchairs or ECVs have to transfer to ride [verify]. Guests who cannot transfer cannot ride at all, and their whole party is often left out.',
+      'At the moment guests step from a moving platform into a moving car, so guests who use wheelchairs or ECVs have to transfer to ride. Guests who cannot transfer cannot ride at all, and their whole party is often left out.',
     adds: [
       'Guests ride without leaving their chair',
       'Whole parties ride together',
@@ -68,7 +68,7 @@ export const UPGRADES: Upgrade[] = [
     what:
       'A new skin for the mountain. Old-world engineering meets a sleek future: a bright white sculptural cone wrapped in sweeping fins, a riveted bronze plinth with porthole windows, burnished brass bands and a crown of spires. A Columbiad-style launch cannon leans into the building on a girder cradle. At night hyperspace light lines trace every fin and spire and light-speed streaks race up the shell. Guests enter through a new portal facade, and onboard a light-speed effects package adds jump projections with synced audio and lighting.',
     why:
-      'Space Mountain is the land\'s icon, but its exterior and ride effects are showing their age next to newer coasters like TRON [verify]. A refresh with a story of its own gives guests a reason to ride again and makes the east end a night-time landmark.',
+      'Space Mountain is the land\'s icon, but its exterior and ride effects are showing their age next to newer coasters like TRON. A refresh with a story of its own gives guests a reason to ride again and makes the east end a night-time landmark.',
     adds: [
       'A landmark that reads from across the park, day and night',
       'A story and onboard effects that bring guests back for another jump',

@@ -15,7 +15,7 @@ Personal concept project. Not affiliated with Disney. Every building, ride and p
 
 ## The four upgrades
 
-1. **Sugar Rush, an indoor dual racing coaster in the old Speedway footprint.** A candy-themed show building has glass upper walls and a vaulted glass roof, so you can see the two side-by-side tracks inside. Two trains launch out of one station with two loading sides, bank through the turns and swap the lead. The entrance facade and queue sit outside, by the walkway.
+1. **Sugar Rush, an indoor dual racing coaster in the old Speedway footprint.** A candy-themed show building has glass upper walls and a vaulted glass roof, so you can see the two side-by-side tracks inside. Two trains launch out of one station with two loading sides, bank through the turns and swap the lead. The entrance facade and queue sit outside, by the walkway. The PeopleMover passes through the building too, so its riders get a preview of the race.
 2. **A wheelchair-accessible PeopleMover.** Every train runs redesigned cars with a wheelchair bay, a coral bay door and a teal band. The station has a step-free boarding zone with a level strip, gates, a sign and an elevator. Every third train glides to a stop there, a ramp folds down, then the line moves on.
 3. **Hyperspace Mountain, the Meridian Starport.** The mountain blends two ideas: the Victorian launch-cannon engineering of the Paris Space Mountain and the sleek white sculptural look of Tokyo's new one. The model includes:
    - a riveted bronze plinth with porthole windows

@@ -351,7 +351,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   station.add(arms);
   scene.add(station);
   animators.push((dt, time) => {
-    arms.rotation.y -= dt * 0.55 * motion;
+    arms.rotation.y += dt * 0.55 * motion;
     rockets.forEach((p, i) => {
       p.rotation.z = Math.sin(time * 0.8 * motion + i * 1.7) * 0.18;
     });
@@ -370,7 +370,10 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const trackPts = [
     [-16, 5], [0, 6.5], [16, 5], [32, -4], [52, -14], [72, -22], [90, -44], [108, -30], [96, -2],
     [80, 18], [84, 46], [70, 72], [42, 82], [12, 70], [-16, 48], [-44, 44], [-66, 28], [-68, 0],
-    [-60, -30], [-40, -40], [-24, -24], [-22, -4],
+    // North show building, then out across the Fantasyland walkway and
+    // through the Sugar Rush show building (a short enclosed run beside the
+    // racing coaster), then back south over Cosmic Ray's.
+    [-62, -30], [-66, -56], [-60, -69], [-49, -75.4], [-36, -75.8], [-24, -75.4], [-13, -69], [-6, -56], [-10, -40], [-20, -22], [-22, -4],
   ].map(([x, z]) => new THREE.Vector3(x, 9.6, z));
   const track = new THREE.CatmullRomCurve3(trackPts, true, 'centripetal');
   const SEG = 440;
@@ -402,7 +405,8 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     Math.hypot(p.x - L.dome.x, p.z - L.dome.z) < L.dome.r - 1 ||
     Math.hypot(p.x, p.z) < 13 ||
     (p.x > L.southBldg.x0 && p.x < L.southBldg.x1 && p.z > L.southBldg.z0 && p.z < L.southBldg.z1) ||
-    (p.x > L.northBldg.x0 && p.x < L.northBldg.x1 && p.z > L.northBldg.z0 && p.z < L.northBldg.z1);
+    (p.x > L.northBldg.x0 && p.x < L.northBldg.x1 && p.z > L.northBldg.z0 && p.z < L.northBldg.z1) ||
+    (p.x > L.speedway.x - 61 && p.x < L.speedway.x + 59 && p.z > L.speedway.z - 22 && p.z < L.speedway.z + 22);
   for (let d = 0; d < totalLen; d += 13) {
     const p = track.getPointAt(d / totalLen);
     if (!inside(p)) colPos.push(p);
@@ -854,7 +858,45 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const glass = new THREE.MeshStandardMaterial({ color: 0xffd6ea, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.1, depthWrite: false, side: THREE.DoubleSide });
   const GH = 10;
   shell.add(box(bW, GH, 0.2, glass, bCx, WALL + 0.5 + GH / 2, -BZ));
-  shell.add(box(bW, GH, 0.2, glass, bCx, WALL + 0.5 + GH / 2, BZ));
+  // The PeopleMover passes through the south glass wall: find where its
+  // track crosses the wall and leave framed openings there.
+  const OPEN_TOP = 13.8;
+  const openings: [number, number][] = [];
+  {
+    const S = 1200;
+    let prev = track.getPointAt(0);
+    for (let i = 1; i <= S; i++) {
+      const p = track.getPointAt(i / S);
+      const z0 = prev.z - sw.z - BZ;
+      const z1 = p.z - sw.z - BZ;
+      if (z0 * z1 <= 0 && z0 !== z1) {
+        const k = z0 / (z0 - z1);
+        const x = prev.x + (p.x - prev.x) * k - sw.x;
+        if (x > BX0 && x < BX1) {
+          const dir = new THREE.Vector2(p.x - prev.x, p.z - prev.z).normalize();
+          const half = (2.2 / Math.max(0.25, Math.abs(dir.y))) + 1.2;
+          openings.push([x - half, x + half]);
+        }
+      }
+      prev = p;
+    }
+    openings.sort((a, b) => a[0] - b[0]);
+  }
+  const frameMat = candyMat(candy.cherry, 0.5);
+  {
+    const yMid = WALL + 0.5 + GH / 2;
+    let x0 = BX0;
+    for (const [a, b] of openings) {
+      if (a > x0) shell.add(box(a - x0, GH, 0.2, glass, (x0 + a) / 2, yMid, BZ));
+      const hTop = WALL + 0.5 + GH - OPEN_TOP;
+      shell.add(box(b - a, hTop, 0.2, glass, (a + b) / 2, OPEN_TOP + hTop / 2, BZ));
+      // Candy frame around the opening.
+      for (const x of [a, b]) shell.add(box(0.6, OPEN_TOP - WALL - 0.5, 0.9, frameMat, x, (OPEN_TOP + WALL + 0.5) / 2, BZ));
+      shell.add(box(b - a + 0.6, 0.6, 0.9, frameMat, (a + b) / 2, OPEN_TOP, BZ));
+      x0 = b;
+    }
+    if (x0 < BX1) shell.add(box(BX1 - x0, GH, 0.2, glass, (x0 + BX1) / 2, yMid, BZ));
+  }
   const vaultY = WALL + 0.5 + GH;
   const vaultGeo = new THREE.CylinderGeometry(BZ, BZ, bW, 32, 1, true, -Math.PI / 2, Math.PI);
   vaultGeo.rotateZ(Math.PI / 2);
@@ -878,10 +920,47 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     const ar = mesh(archGeo, archMat, false, false);
     ar.position.set(x, vaultY, 0);
     shell.add(ar);
-    for (const z of [-BZ, BZ]) shell.add(cyl(0.3, 0.3, GH, 6, archMat, x, WALL + 0.5 + GH / 2, z));
+    for (const z of [-BZ, BZ]) {
+      if (z === BZ && openings.some(([a, b]) => x > a - 0.5 && x < b + 0.5)) continue;
+      shell.add(cyl(0.3, 0.3, GH, 6, archMat, x, WALL + 0.5 + GH / 2, z));
+    }
   }
   shell.add(box(bW, 0.1, BZ * 2, new THREE.MeshStandardMaterial({ color: 0x3a2350, roughness: 0.9 }), bCx, 0.08, 0));
   coaster.add(shell);
+
+  // Enclosed PeopleMover run inside the building: a canopy and a glazed
+  // window wall on the coaster side, so riders glimpse the race below.
+  {
+    const inside: { p: THREE.Vector3; t: THREE.Vector3 }[] = [];
+    const S = 1600;
+    for (let i = 0; i < S; i++) {
+      const p = track.getPointAt(i / S);
+      const lx = p.x - sw.x;
+      const lz = p.z - sw.z;
+      if (lx > BX0 + 1 && lx < BX1 - 1 && lz > -BZ && lz < BZ - 0.4) inside.push({ p: new THREE.Vector3(lx, p.y, lz), t: track.getTangentAt(i / S) });
+    }
+    const spots = inside.filter((_, i) => i % 4 === 0);
+    const roof = new THREE.InstancedMesh(new THREE.BoxGeometry(1.9, 0.25, 4.8), candyMat(candy.cream), spots.length);
+    const roofEdge = new THREE.InstancedMesh(new THREE.BoxGeometry(1.9, 0.16, 0.16), candyMat(candy.mint, 1.4), spots.length);
+    const pane = new THREE.InstancedMesh(new THREE.BoxGeometry(1.9, 3.6, 0.08), new THREE.MeshStandardMaterial({ color: 0xbfefff, transparent: true, opacity: 0.22, roughness: 0.05, depthWrite: false }), spots.length);
+    const mull: THREE.Matrix4[] = [];
+    const qq = new THREE.Quaternion();
+    const X = new THREE.Vector3(1, 0, 0);
+    spots.forEach(({ p, t }, i) => {
+      qq.setFromUnitVectors(X, new THREE.Vector3(t.x, 0, t.z).normalize());
+      // Coaster side = toward the building's long axis (-z in local terms).
+      const side = new THREE.Vector3(-t.z, 0, t.x).normalize();
+      if (side.z > 0) side.negate();
+      const roofC = p.clone().addScaledVector(side, 0.35).setY(13.3);
+      roof.setMatrixAt(i, m4.compose(roofC, qq, new THREE.Vector3(1, 1, 1)));
+      roofEdge.setMatrixAt(i, m4.compose(p.clone().addScaledVector(side, 2.3).setY(13.1), qq, new THREE.Vector3(1, 1, 1)));
+      pane.setMatrixAt(i, m4.compose(p.clone().addScaledVector(side, 2.3).setY(11.2), qq, new THREE.Vector3(1, 1, 1)));
+      if (i % 2 === 0) mull.push(new THREE.Matrix4().compose(p.clone().addScaledVector(side, 2.3).setY(11.2), qq, new THREE.Vector3(1, 1, 1)));
+    });
+    const mullions = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 3.8, 0.22), frameMat, mull.length);
+    mull.forEach((m, i) => mullions.setMatrixAt(i, m));
+    coaster.add(roof, roofEdge, pane, mullions);
+  }
 
   // Entrance facade outside the building on the queue side (south-east corner).
   const facade = new THREE.Group();
@@ -1228,6 +1307,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   // ---------- Trees around the edge of the land ----------
   const inRect = (x: number, z: number, x0: number, x1: number, z0: number, z1: number, pad: number) =>
     x > x0 - pad && x < x1 + pad && z > z0 - pad && z < z1 + pad;
+  const pmSamples = track.getSpacedPoints(260);
   const blocked = (x: number, z: number) => {
     if (Math.hypot(x, z) < 30) return true;
     const ddx = x - L.dome.x;
@@ -1247,6 +1327,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     if (Math.abs(x - ld.x) < 11 && Math.abs(z - ld.z) < 9) return true;
     if (Math.abs(x - sq.x) < 14 && Math.abs(z - sq.z) < 18) return true;
     if (Math.hypot(x - 40, z - 82) < 16) return true;
+    for (const p of pmSamples) if (Math.hypot(x - p.x, z - p.z) < 4.5) return true;
     for (let i = 0; i <= 60; i++) {
       const p = rail.getPointAt(i / 60);
       if (Math.hypot(x - p.x, z - p.z) < 7) return true;
