@@ -7,10 +7,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { buildWorld } from './world';
-import { Sim, SimStats } from './sim';
-import { CrowdView } from './crowd';
 import { UPGRADES, AREA_LABELS } from './content';
-import { ZONE_LABELS } from './layout';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -62,34 +59,19 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 let useBloom = params.get('bloom') !== '0';
 
-const world = buildWorld(scene, { reducedMotion });
-
-// ---------- Guest flow ----------
-const AGENTS = 750;
-const startUp = params.get('mode') === 'upgraded';
-const sim = new Sim(AGENTS, startUp ? 1 : 0, 7);
-const simToday = new Sim(AGENTS, 0, 21);
-const simUp = new Sim(AGENTS, 1, 21);
-const crowd = new CrowdView(scene, sim);
-const SIM_DT = 1 / 20;
-// Warm up so the stats and crowding are at steady state on first view.
-for (let i = 0; i < 160 / SIM_DT; i++) {
-  sim.step(SIM_DT);
-  simToday.step(SIM_DT);
-  simUp.step(SIM_DT);
-}
+const world = buildWorld(scene, { reducedMotion, renderer });
 
 // ---------- Labels & pins ----------
 for (const l of AREA_LABELS) {
   const el = document.createElement('div');
-  el.className = 'area-label' + (l.minor ? ' minor' : '') + (l.today ? ' today' : '') + (l.up ? ' up' : '');
+  el.className = 'area-label' + (l.minor ? ' minor' : '');
   el.textContent = l.text;
   const o = new CSS2DObject(el);
   o.position.set(l.x, l.y, l.z);
   scene.add(o);
 }
 
-const beamMat = new THREE.MeshBasicMaterial({ color: 0xff6b4a, transparent: true, opacity: 0.8 });
+const beamMat = new THREE.MeshBasicMaterial({ color: 0x1f8fb0, transparent: true, opacity: 0.8 });
 const beamGeo = new THREE.CylinderGeometry(0.12, 0.12, 12, 6).translate(0, 6, 0);
 const pinBtns: HTMLButtonElement[] = [];
 UPGRADES.forEach((u, i) => {
@@ -118,7 +100,8 @@ UPGRADES.forEach((u, i) => {
 });
 
 // ---------- Camera helpers ----------
-const target0 = new THREE.Vector3(-6, 0, -22);
+// Phones frame the land a little further east so Space Mountain stays in view.
+const target0 = camera.aspect < 0.8 ? new THREE.Vector3(14, 0, -14) : new THREE.Vector3(-6, 0, -22);
 const topDown = params.get('view') === 'top';
 function overviewPos() {
   const a = camera.aspect;
@@ -152,23 +135,6 @@ function flyToPin(i: number, dur = 1.8) {
   flyTo(p, t, dur);
 }
 
-// ---------- Mode toggle ----------
-let mode: 'today' | 'upgraded' = 'today';
-let blendP = 0; // 0..1 progress toward upgraded
-function setMode(m: 'today' | 'upgraded') {
-  mode = m;
-  document.body.dataset.mode = m;
-  $('mode-today').classList.toggle('active', m === 'today');
-  $('mode-up').classList.toggle('active', m === 'upgraded');
-  $('mode-today').setAttribute('aria-pressed', String(m === 'today'));
-  $('mode-up').setAttribute('aria-pressed', String(m === 'upgraded'));
-  beamMat.color.set(m === 'today' ? 0xff6b4a : 0x1f8fb0);
-  renderStats(true);
-  if (current >= 0) renderReadout();
-}
-$('mode-today').addEventListener('click', () => setMode('today'));
-$('mode-up').addEventListener('click', () => setMode('upgraded'));
-
 // ---------- Card ----------
 let current = -1;
 let touring = false;
@@ -182,9 +148,15 @@ function openCard(i: number, fly: boolean) {
   $('c-num').textContent = String(i + 1).padStart(2, '0');
   $('c-area').textContent = u.area;
   $('c-title').textContent = u.title;
-  $('c-problem').innerHTML = fmtVerify(u.problem);
-  $('c-fix').innerHTML = fmtVerify(u.fix);
-  $('c-impact').innerHTML = u.impact.map((m) => `<dt>${m.metric}</dt><dd>${fmtVerify(m.value)}</dd>`).join('');
+  $('c-what').innerHTML = fmtVerify(u.what);
+  $('c-why').innerHTML = fmtVerify(u.why);
+  $('c-adds').innerHTML = u.adds.map((a) => `<li>${fmtVerify(a)}</li>`).join('');
+  const story = $('c-story');
+  if (u.story) {
+    story.hidden = false;
+    story.innerHTML = `<h3><span class="tag tag-story">The story</span></h3><p class="story-title">${u.story.title}</p><p>${u.story.text}</p>`;
+  } else story.hidden = true;
+  $('c-scroll').scrollTop = 0;
   $('c-count').textContent = `${i + 1} / ${UPGRADES.length}`;
   ($('c-prev') as HTMLButtonElement).disabled = i === 0;
   $('c-next').textContent = i === UPGRADES.length - 1 ? (touring ? 'Finish' : 'Done') : touring ? 'Next stop' : 'Next';
@@ -195,7 +167,6 @@ function openCard(i: number, fly: boolean) {
   card.style.animation = '';
   document.body.classList.add('card-open');
   pinBtns.forEach((b, k) => b.classList.toggle('active', k === i));
-  renderReadout();
   if (fly) flyToPin(i);
 }
 function closeCard() {
@@ -239,96 +210,7 @@ $('btn-tour').addEventListener('click', () => {
   } else startTour();
 });
 
-// ---------- Stats ----------
-let statsT: SimStats = simToday.stats();
-let statsU: SimStats = simUp.stats();
-const fmtMin = (m: number) => {
-  const s = Math.round(m * 60);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-};
-function renderStats(force = false) {
-  if (!force) {
-    statsT = simToday.stats();
-    statsU = simUp.stats();
-  }
-  $('s-walk-t').textContent = fmtMin(statsT.avgWalkMin);
-  $('s-walk-u').textContent = fmtMin(statsU.avgWalkMin);
-  $('s-crowd-t').textContent = statsT.crowdIndex.toFixed(0);
-  $('s-crowd-u').textContent = statsU.crowdIndex.toFixed(0);
-  $('s-hot-t').textContent = ZONE_LABELS[statsT.worstZone];
-  $('s-hot-u').textContent = statsU.zoneDensity[statsU.worstZone] < 0.2 ? 'None above comfort' : ZONE_LABELS[statsU.worstZone];
-  $('s-rides-t').textContent = fmtK(statsT.totalRidesPerHour);
-  $('s-rides-u').textContent = fmtK(statsU.totalRidesPerHour);
-  const dr = (statsU.totalRidesPerHour / Math.max(1, statsT.totalRidesPerHour) - 1) * 100;
-  const dc = (1 - statsU.crowdIndex / Math.max(0.01, statsT.crowdIndex)) * 100;
-  const sgn = (v: number) => (v >= 0 ? '+' : '') + v.toFixed(0);
-  const crowd = Math.abs(dc) < 5 ? 'crowding about the same' : dc > 0 ? `${dc.toFixed(0)}% less crowding` : `${(-dc).toFixed(0)}% more crowding`;
-  $('s-delta').textContent = `Upgraded: ${sgn(dr)}% ride trips, ${crowd}`;
-  $('strip-delta').textContent = `${sgn(dr)}%`;
-}
-const fmtK = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n.toFixed(0));
-function rideRow(label: string, a: number, b: number) {
-  const max = Math.max(a, b, 1);
-  return `<div>${label}</div>
-      <div>Today <b>${fmtK(a)}/hr</b></div>
-      <div class="bar"><i style="width:${((a / max) * 100).toFixed(0)}%;background:linear-gradient(90deg,#ff9f43,#ff6b4a)"></i></div>
-      <div>Upgraded <b>${fmtK(b)}/hr</b></div>
-      <div class="bar"><i style="width:${((b / max) * 100).toFixed(0)}%;background:#1f8fb0"></i></div>`;
-}
-function renderReadout() {
-  if (current < 0) return;
-  const u = UPGRADES[current];
-  const el = $('c-readout');
-  const rT = statsT.ridesPerHour;
-  const rU = statsU.ridesPerHour;
-  const qd = (z: keyof typeof statsT.zoneDensity) =>
-    `${ZONE_LABELS[z]} density: <b>${Math.min(100, (statsT.zoneDensity[z] / 1.1) * 100).toFixed(0)}%</b> today vs <b>${Math.min(100, (statsU.zoneDensity[z] / 1.1) * 100).toFixed(0)}%</b> upgraded (share of jam density).`;
-  if (u.id === 'sugar-rush') {
-    el.innerHTML = `Live model readout: ride trips per hour<br>` + rideRow('Speedway today vs Sugar Rush upgraded', rT.speedway ?? 0, rU.sugarRush ?? 0) + `<div class="small">${qd('rideQueue')}</div>`;
-  } else if (u.id === 'accessible-pm') {
-    el.innerHTML = `Live model readout: share of modelled guests able to ride the PeopleMover
-      <div>Today <b>${(statsT.pmAccess * 100).toFixed(1)}%</b></div>
-      <div class="bar"><i style="width:${(statsT.pmAccess * 100).toFixed(1)}%;background:linear-gradient(90deg,#ff9f43,#ff6b4a)"></i></div>
-      <div>Upgraded <b>${(statsU.pmAccess * 100).toFixed(1)}%</b></div>
-      <div class="bar"><i style="width:${(statsU.pmAccess * 100).toFixed(1)}%;background:#1f8fb0"></i></div>
-      <div class="small">PeopleMover trips: <b>${fmtK(rT.peoplemover ?? 0)}/hr</b> today vs <b>${fmtK(rU.peoplemover ?? 0)}/hr</b> upgraded.</div>`;
-  } else if (u.id === 'hyperspace') {
-    el.innerHTML = `Live model readout: Space Mountain trips per hour<br>` + rideRow('Demand with the refresh', rT.spaceMountain ?? 0, rU.spaceMountain ?? 0) + `<div class="small">${qd('smEntrance')}</div>`;
-  } else if (u.id === 'stitch') {
-    el.innerHTML = `Live model readout: guests seated in Stitch's Great Escape per hour<br>` + rideRow('Closed today vs reopened', rT.stitch ?? 0, rU.stitch ?? 0) + `<div class="small">${qd('promenade')}</div>`;
-  } else if (u.zone) {
-    const dt = statsT.zoneDensity[u.zone];
-    const du = statsU.zoneDensity[u.zone];
-    const pct = (d: number) => Math.min(100, (d / 1.1) * 100).toFixed(0);
-    el.innerHTML = `Live model readout: ${ZONE_LABELS[u.zone]}, density as a share of jam density
-      <div>Today <b>${pct(dt)}%</b></div>
-      <div class="bar"><i style="width:${pct(dt)}%;background:linear-gradient(90deg,#ff9f43,#ff6b4a)"></i></div>
-      <div>Upgraded <b>${pct(du)}%</b></div>
-      <div class="bar"><i style="width:${pct(du)}%;background:#1f8fb0"></i></div>`;
-  } else {
-    el.innerHTML = `Live model readout (whole land): crowding index <b>${statsT.crowdIndex.toFixed(0)}</b> today vs <b>${statsU.crowdIndex.toFixed(0)}</b> upgraded, avg walk <b>${fmtMin(statsT.avgWalkMin)}</b> vs <b>${fmtMin(statsU.avgWalkMin)}</b> min.`;
-  }
-}
-renderStats();
-$('stats-toggle').addEventListener('click', () => {
-  const s = $('stats');
-  const c = s.classList.toggle('collapsed');
-  $('stats-toggle').setAttribute('aria-expanded', String(!c));
-});
-if (window.innerWidth < 760) {
-  $('stats').classList.add('collapsed');
-  $('stats-toggle').setAttribute('aria-expanded', 'false');
-}
-
 // ---------- Tools ----------
-let paused = false;
-$('btn-pause').addEventListener('click', () => {
-  paused = !paused;
-  document.body.classList.toggle('paused', paused);
-  $('btn-pause').setAttribute('aria-pressed', String(paused));
-  $('btn-pause').innerHTML = paused ? '&#9654;' : 'II';
-  $('btn-pause').setAttribute('aria-label', paused ? 'Resume guest flow' : 'Pause guest flow');
-});
 $('btn-labels').addEventListener('click', () => {
   const off = document.body.classList.toggle('no-labels');
   $('btn-labels').setAttribute('aria-pressed', String(!off));
@@ -360,7 +242,6 @@ window.addEventListener('keydown', (e) => {
     stopTour();
     closeCard();
   } else if (!(e.target instanceof HTMLButtonElement && e.key === ' ')) {
-    if (e.key === 't' || e.key === 'T') setMode(mode === 'today' ? 'upgraded' : 'today');
     if (e.key === 'ArrowRight' && current >= 0 && current < UPGRADES.length - 1) openCard(current + 1, true);
     if (e.key === 'ArrowLeft' && current > 0) openCard(current - 1, true);
   }
@@ -372,10 +253,10 @@ $('up-list').innerHTML = UPGRADES.map(
     <div class="up-num">${String(i + 1).padStart(2, '0')}</div>
     <div><h2>${u.title}</h2><p class="up-area">${u.area}</p></div>
     <div class="up-body">
-      <div><h3><span class="tag tag-problem">Problem</span></h3><p>${fmtVerify(u.problem)}</p></div>
-      <div><h3><span class="tag tag-fix">Fix</span></h3><p>${fmtVerify(u.fix)}</p></div>
-      <div class="up-full"><h3><span class="tag tag-impact">Expected impact</span></h3>
-        <dl class="up-impact">${u.impact.map((m) => `<dt>${m.metric}</dt><dd>${fmtVerify(m.value)}</dd>`).join('')}</dl></div>
+      <div><h3><span class="tag tag-fix">What changed</span></h3><p>${fmtVerify(u.what)}</p></div>
+      <div><h3><span class="tag tag-problem">Why</span></h3><p>${fmtVerify(u.why)}</p>
+        <h3><span class="tag tag-impact">What it adds</span></h3><ul class="up-adds">${u.adds.map((a) => `<li>${fmtVerify(a)}</li>`).join('')}</ul></div>
+      ${u.story ? `<div class="up-full up-story"><h3><span class="tag tag-story">The story</span></h3><p class="story-title">${u.story.title}</p><p>${u.story.text}</p></div>` : ''}
     </div>
     <div class="up-actions"><a class="btn primary" href="#/explore/${i + 1}">See it in 3D</a></div>
   </li>`,
@@ -422,11 +303,7 @@ function applyRoute() {
 }
 window.addEventListener('hashchange', applyRoute);
 
-// Screenshot / deep-link hooks: ?mode=upgraded&intro=0&pin=2
-if (params.get('mode') === 'upgraded') {
-  setMode('upgraded');
-  blendP = 1;
-}
+// Screenshot / deep-link hooks: ?welcome=0&pin=2, ?cam=x,y,z&look=x,y,z
 if (params.get('welcome') === '0' || params.get('intro') === '0') welcome.setAttribute('hidden', '');
 if (params.get('pin')) {
   const i = Number(params.get('pin')) - 1;
@@ -435,6 +312,14 @@ if (params.get('pin')) {
     openCard(i, false);
     flyToPin(i, 0.001);
   }
+}
+const camP = params.get('cam')?.split(',').map(Number);
+const lookP = params.get('look')?.split(',').map(Number);
+if (camP?.length === 3 && lookP?.length === 3) {
+  welcome.setAttribute('hidden', '');
+  camera.position.set(camP[0], camP[1], camP[2]);
+  controls.target.set(lookP[0], lookP[1], lookP[2]);
+  controls.update();
 }
 
 // ---------- Resize ----------
@@ -453,8 +338,6 @@ new ResizeObserver(resize).observe(viewportEl);
 
 // ---------- Loop ----------
 const clock = new THREE.Clock();
-let acc = 0;
-let statAcc = 0;
 let frames = 0;
 let fpsT = 0;
 let perfChecked = false;
@@ -469,34 +352,7 @@ function frame() {
   const dt = Math.min(0.05, clock.getDelta());
   elapsed += dt;
 
-  // Blend toward the selected mode.
-  const dur = reducedMotion ? 0.25 : 1.4;
-  const goal = mode === 'upgraded' ? 1 : 0;
-  if (blendP !== goal) blendP = goal > blendP ? Math.min(1, blendP + dt / dur) : Math.max(0, blendP - dt / dur);
-  const u = ease(blendP);
-  sim.t = u;
-
-  if (!paused) {
-    acc += dt;
-    let steps = 0;
-    while (acc >= SIM_DT && steps < 4) {
-      sim.step(SIM_DT);
-      simToday.step(SIM_DT);
-      simUp.step(SIM_DT);
-      acc -= SIM_DT;
-      steps++;
-    }
-    if (steps === 4) acc = 0;
-  }
-  crowd.update(dt, u);
-  world.update(paused ? 0 : dt, elapsed, u);
-
-  statAcc += dt;
-  if (statAcc > 0.5) {
-    statAcc = 0;
-    renderStats();
-    renderReadout();
-  }
+  world.update(dt, elapsed);
 
   if (flight) {
     flight.t += dt / flight.dur;
@@ -520,7 +376,7 @@ function frame() {
   controls.update();
   controls.target.x = THREE.MathUtils.clamp(controls.target.x, -160, 140);
   controls.target.z = THREE.MathUtils.clamp(controls.target.z, -150, 110);
-  controls.target.y = THREE.MathUtils.clamp(controls.target.y, 0, 30);
+  controls.target.y = THREE.MathUtils.clamp(controls.target.y, 0, 40);
 
   renderer.info.autoReset = false;
   renderer.info.reset();
@@ -530,7 +386,7 @@ function frame() {
   labelRenderer.render(scene, camera);
 
   // One-time adaptive quality check after things settle.
-  if (!perfChecked) {
+  if (!perfChecked && !params.has('hq')) {
     if (elapsed > 2) {
       frames++;
       fpsT += dt;

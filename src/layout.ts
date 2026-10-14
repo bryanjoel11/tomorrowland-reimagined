@@ -13,27 +13,11 @@ export interface NodeDef {
 export interface EdgeDef {
   a: string;
   b: string;
-  /** Usable walkway width today. */
+  /** Walkway width. */
   w: number;
-  /** Usable width once the upgrades land (defaults to w). */
-  wUp?: number;
-  /** Zone key for the pinch points we track. */
-  zone?: ZoneKey;
-  /** Path exists but has no signage today, so guests rarely pick it. */
-  unsigned?: boolean;
-  /** Only exists in the upgraded plan. */
-  upOnly?: boolean;
   /** Paint this edge as a walkway mesh (plaza edges sit on the plaza disc). */
   paint?: boolean;
 }
-
-export type ZoneKey = 'rideQueue' | 'smEntrance' | 'promenade';
-
-export const ZONE_LABELS: Record<ZoneKey, string> = {
-  rideQueue: 'Speedway / coaster queue walkway',
-  smEntrance: 'Space Mountain entrance',
-  promenade: 'Main promenade',
-};
 
 export const NODES: NodeDef[] = [
   // Edges of the land (guests arrive and leave here)
@@ -80,12 +64,12 @@ export const EDGES: EdgeDef[] = [
   { a: 'HUB', b: 'BR', w: 14, paint: true },
   { a: 'BR', b: 'E', w: 14, paint: true },
   { a: 'E', b: 'P0', w: 14, paint: true },
-  { a: 'P0', b: 'CW', w: 9, zone: 'promenade', paint: true },
+  { a: 'P0', b: 'CW', w: 9, paint: true },
   { a: 'E', b: 'TT', w: 8, paint: true },
   { a: 'TT', b: 'MS', w: 9, paint: true },
   { a: 'P0', b: 'LF', w: 7, paint: true },
-  // Closed today; the reopened Stitch show gets its entrance walk back.
-  { a: 'P0', b: 'SG', w: 0, wUp: 6, upOnly: true, paint: true },
+  // Entrance walk to the reopened Stitch show.
+  { a: 'P0', b: 'SG', w: 6, paint: true },
   { a: 'CW', b: 'CN', w: 10 },
   { a: 'CN', b: 'CE', w: 10 },
   { a: 'CE', b: 'CS', w: 10 },
@@ -95,62 +79,24 @@ export const EDGES: EdgeDef[] = [
   { a: 'CN', b: 'N0', w: 10, paint: true },
   { a: 'N0', b: 'N1', w: 8, paint: true },
   { a: 'N1', b: 'FL', w: 9, paint: true },
-  { a: 'N0', b: 'SPq', w: 6, zone: 'rideQueue', paint: true },
+  { a: 'N0', b: 'SPq', w: 6, paint: true },
   { a: 'N0', b: 'T0', w: 8, paint: true },
   { a: 'CE', b: 'S1', w: 12, paint: true },
-  { a: 'S1', b: 'SMin', w: 7, zone: 'smEntrance', paint: true },
+  { a: 'S1', b: 'SMin', w: 7, paint: true },
   { a: 'S1', b: 'T0', w: 9, paint: true },
   { a: 'T0', b: 'T1', w: 7, paint: true },
   { a: 'T1', b: 'SMx', w: 7, paint: true },
   { a: 'T1', b: 'TR', w: 8, paint: true },
   { a: 'TR', b: 'SC', w: 7, paint: true },
-  { a: 'N0', b: 'T1', w: 5, unsigned: true, paint: true },
+  { a: 'N0', b: 'T1', w: 5, paint: true },
   { a: 'CS', b: 'BZin', w: 7, paint: true },
   { a: 'BZex', b: 'SH', w: 7, paint: true },
   { a: 'SH', b: 'CS', w: 8, paint: true },
-  { a: 'SH', b: 'C1', w: 7, unsigned: true, paint: true },
+  { a: 'SH', b: 'C1', w: 7, paint: true },
   { a: 'CE', b: 'C1', w: 9, paint: true },
   { a: 'C1', b: 'COP', w: 8, paint: true },
   { a: 'CE', b: 'PMx', w: 8 },
   { a: 'PMx', b: 'CS', w: 8 },
-];
-
-export interface DestDef {
-  key: string;
-  entry: string;
-  exit: string;
-  dwell: [number, number];
-  weight: number;
-  /** Weight once the upgrades land (defaults to weight). */
-  weightUp?: number;
-  /** Counts toward ride trips per hour. */
-  ride?: boolean;
-  /** Stays visible while dwelling (a cart, not a ride). */
-  visibleDwell?: boolean;
-  upOnly?: boolean;
-  todayOnly?: boolean;
-}
-
-export const DESTS: DestDef[] = [
-  // Hyperspace Mountain: same ride system, more re-ride demand [verify].
-  { key: 'spaceMountain', entry: 'SMin', exit: 'SMx', dwell: [30, 45], weight: 0.2, weightUp: 0.24, ride: true },
-  { key: 'tron', entry: 'TR', exit: 'TR', dwell: [30, 45], weight: 0.12, ride: true },
-  { key: 'buzz', entry: 'BZin', exit: 'BZex', dwell: [25, 35], weight: 0.12, ride: true },
-  // Today: low-capacity Speedway with long waits. Upgraded: Sugar Rush coaster
-  // in the same footprint, higher capacity so guests spend less time in line.
-  { key: 'speedway', entry: 'SPq', exit: 'SPq', dwell: [45, 60], weight: 0.08, ride: true, todayOnly: true },
-  { key: 'sugarRush', entry: 'SPq', exit: 'SPq', dwell: [26, 36], weight: 0.12, ride: true, upOnly: true },
-  { key: 'carousel', entry: 'COP', exit: 'COP', dwell: [35, 50], weight: 0.05, ride: true },
-  { key: 'laughFloor', entry: 'LF', exit: 'LF', dwell: [30, 40], weight: 0.06, ride: true },
-  // Upgraded: Stitch's Great Escape reopens as an all-ages in-the-round show.
-  { key: 'stitch', entry: 'SG', exit: 'SG', dwell: [40, 55], weight: 0.08, ride: true, upOnly: true },
-  { key: 'cosmicRays', entry: 'CR', exit: 'CR', dwell: [20, 35], weight: 0.1 },
-  { key: 'shop', entry: 'SH', exit: 'SH', dwell: [8, 15], weight: 0.05 },
-  { key: 'peoplemover', entry: 'CN', exit: 'PMx', dwell: [20, 30], weight: 0.08, ride: true },
-  { key: 'hub', entry: 'HUB', exit: 'HUB', dwell: [4, 16], weight: 0.06 },
-  { key: 'mainStreet', entry: 'MS', exit: 'MS', dwell: [4, 16], weight: 0.03 },
-  { key: 'fantasyland', entry: 'FL', exit: 'FL', dwell: [4, 16], weight: 0.03 },
-  { key: 'storybook', entry: 'SC', exit: 'SC', dwell: [4, 16], weight: 0.02 },
 ];
 
 export const nodeById = (id: string): NodeDef => {

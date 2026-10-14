@@ -1,5 +1,3 @@
-import type { ZoneKey } from './layout';
-
 export interface Upgrade {
   id: string;
   title: string;
@@ -7,35 +5,38 @@ export interface Upgrade {
   /** Where in the land this sits. */
   area: string;
   pos: { x: number; z: number };
-  zone?: ZoneKey;
-  problem: string;
-  fix: string;
-  impact: { metric: string; value: string }[];
+  /** What changed in the land. */
+  what: string;
+  /** Why it is worth doing. */
+  why: string;
+  /** What it adds, in plain words (no figures). */
+  adds: string[];
+  /** Optional attraction backstory. */
+  story?: { title: string; text: string };
   /** Height of the pin above the ground. */
   pinY?: number;
   /** Camera offset from the pin when flying to it. */
   cam: { x: number; y: number; z: number };
 }
 
-// Bryan's four upgrades. Anything tagged [verify] is a working assumption.
+// Bryan's four upgrades. Anything tagged [verify] is a factual claim still to confirm.
 export const UPGRADES: Upgrade[] = [
   {
     id: 'sugar-rush',
-    title: 'Replace the Speedway with Sugar Rush, an indoor dual racing coaster',
+    title: 'Sugar Rush, an indoor dual racing coaster',
     short: 'Sugar Rush',
-    area: 'Tomorrowland Speedway footprint, north of Cosmic Ray\'s',
+    area: 'Former Tomorrowland Speedway footprint, north of Cosmic Ray\'s',
     pos: { x: -24, z: -94 },
     pinY: 30,
-    zone: 'rideQueue',
-    problem:
-      'Tomorrowland Speedway takes up one of the biggest footprints in the land but moves relatively few guests per hour, because each car is loaded and dispatched one at a time [verify]. The result is long waits for a dated experience, the queue spills out toward the walkway on busy days, and the whole attraction sits outdoors in Florida heat, rain and lightning holds [verify].',
-    fix:
-      'Remove the Speedway and put an indoor dual racing coaster themed to the candy-racing world of Sugar Rush (Wreck-It Ralph) in the same footprint. Two side-by-side tracks launch out of one candy-themed station and race each other through banked turns and an airtime hill, with the lead changing along the way. The show building gets a candy facade, glass upper walls and a vaulted roof, and the entrance and queue sit outside it on the walkway side.',
-    impact: [
-      { metric: 'Hourly capacity', value: 'Two loading sides roughly double the dispatches, about 2x one track and well above the Speedway [verify]' },
-      { metric: 'All-weather ops', value: 'Indoors, so it keeps running through rain and heat and only lightning on the launch is a factor [verify]' },
-      { metric: 'Re-ride appeal', value: 'Racing means a different winner each time, so guests come back for the other side [verify]' },
-      { metric: 'Posted wait', value: 'Shorter for the same demand, and the queue moves off the walkway [verify]' },
+    what:
+      'The Speedway is gone. In its footprint stands a candy-themed show building with glass upper walls and a vaulted glass roof, and inside it an indoor dual racing coaster themed to the candy-racing world of Sugar Rush (Wreck-It Ralph). Two trains launch side by side out of one station, race through banked turns and an airtime hill, and trade the lead along the way. The candy facade, entrance and queue sit outside on the walkway side.',
+    why:
+      'The Speedway fills one of the largest plots in the land but loads one car at a time [verify], so it moves few guests for its size, and it runs outdoors through Florida heat, rain and lightning holds. A racing coaster puts the same land to work with two loading sides and a ride guests want to repeat.',
+    adds: [
+      'Two loading sides, so far more guests per hour than one track',
+      'Indoors, so it keeps running through rain and heat',
+      'Racing re-ride appeal: a different winner every time',
+      'A family coaster and a fresh story for the north side of the land',
     ],
     cam: { x: 50, y: 80, z: 96 },
   },
@@ -46,73 +47,71 @@ export const UPGRADES: Upgrade[] = [
     area: 'PeopleMover station, Rocket Tower Plaza',
     pos: { x: -4, z: 9 },
     pinY: 20,
-    problem:
-      'To ride the PeopleMover today, guests have to step from a moving platform into a moving car, so guests who use wheelchairs or ECVs must be able to transfer [verify]. Guests who cannot transfer simply cannot ride, and their whole party is often left out.',
-    fix:
-      'Redesign the cars with a wheelchair bay and a fold-down ramp, and add an accessible boarding zone on the platform where the moving belt and the train slow to a stop for a few seconds to let a guest roll on and off. The rest of the platform keeps loading as it does today.',
-    impact: [
-      { metric: 'Accessibility', value: 'Guests who cannot transfer can ride without leaving their chair' },
-      { metric: 'Inclusive capacity', value: 'About 4% more guests able to ride in the model [verify]' },
-      { metric: 'Throughput cost', value: 'Short, occasional stops; small hourly impact [verify]' },
-      { metric: 'Guest satisfaction', value: 'Whole parties ride together; fewer recovery cases [verify]' },
+    what:
+      'Every train runs redesigned cars with a wheelchair bay, a wide side door and a fold-down ramp. On the station deck a step-free boarding zone, reached by a new elevator, is where the moving belt and the train slow to a stop for a few seconds so a guest can roll on and off. The rest of the platform keeps loading as it always has.',
+    why:
+      'At the moment guests step from a moving platform into a moving car, so guests who use wheelchairs or ECVs have to transfer to ride [verify]. Guests who cannot transfer cannot ride at all, and their whole party is often left out.',
+    adds: [
+      'Guests ride without leaving their chair',
+      'Whole parties ride together',
+      'Short, occasional stops instead of a different experience for some guests',
     ],
     cam: { x: -20, y: 20, z: 30 },
   },
   {
     id: 'hyperspace',
-    title: 'Space Mountain refurbishment: Hyperspace Mountain',
+    title: 'Space Mountain refurbished: Hyperspace Mountain',
     short: 'Hyperspace Mountain',
     area: 'Space Mountain exterior, entrance and ride',
     pos: { x: 74, z: -14 },
-    pinY: 18,
-    zone: 'smEntrance',
-    problem:
-      'Space Mountain\'s exterior and ride experience are showing their age [verify]. The dome reads as a plain white building after dark, the entrance is easy to walk past, and the in-ride effects have not kept pace with newer coasters like TRON next door [verify].',
-    fix:
-      'Refurbish the exterior with glowing light lines along the ribs and spires, an animated hyperspace light show across the dome at night, and a new entrance and queue facade. Inside, add an onboard light-speed effects package: hyperspace jump projections, synced audio and lighting [verify].',
-    impact: [
-      { metric: 'Re-ride demand', value: 'More repeat rides from a fresh experience [verify]' },
-      { metric: 'Guest appeal', value: 'A night-time landmark that pulls guests to the east end [verify]' },
-      { metric: 'Merch tie-in', value: 'Hyperspace-themed products at the Launch Depot exit shop [verify]' },
-      { metric: 'Trade-off', value: 'Higher demand adds some crowding at the entrance (model)' },
+    pinY: 20,
+    what:
+      'A new skin for the mountain. Old-world engineering meets a sleek future: a bright white sculptural cone wrapped in sweeping fins, a riveted bronze plinth with porthole windows, burnished brass bands and a crown of spires. A Columbiad-style launch cannon leans into the building on a girder cradle. At night hyperspace light lines trace every fin and spire and light-speed streaks race up the shell. Guests enter through a new portal facade, and onboard a light-speed effects package adds jump projections with synced audio and lighting.',
+    why:
+      'Space Mountain is the land\'s icon, but its exterior and ride effects are showing their age next to newer coasters like TRON [verify]. A refresh with a story of its own gives guests a reason to ride again and makes the east end a night-time landmark.',
+    adds: [
+      'A landmark that reads from across the park, day and night',
+      'A story and onboard effects that bring guests back for another jump',
+      'A natural merchandise tie-in at the Launch Depot exit shop',
     ],
-    cam: { x: -46, y: 54, z: 62 },
+    story: {
+      title: 'The Meridian Starport',
+      text:
+        'In 1889 an engineering society cast a great brass cannon to fire a capsule beyond the sky. It never fired. A century later the starport was built around it: white ceramic fins, brass hoops and a crown of spires grown over the old cannon like coral. Tonight the cannon is the hyperspace injector. Guests strap into a launch sled, the hoops charge one by one, and the starport throws them through the light barrier, a light-speed jump through the dark and home again before the stars stop streaking.',
+    },
+    cam: { x: -46, y: 40, z: 66 },
   },
   {
     id: 'stitch',
-    title: "Reopen Stitch's Great Escape, reimagined",
+    title: "Stitch's Great Escape, reimagined",
     short: "Stitch's Great Escape",
     area: 'North show building, next to Cosmic Ray\'s, across from Laugh Floor',
     pos: { x: -53, z: -14 },
     pinY: 20,
-    zone: 'promenade',
-    problem:
-      "A large show building sits dark on prime promenade frontage, right across from Monsters, Inc. Laugh Floor [verify]. That is indoor capacity the land is not using, and the shuttered facade makes the west end of Tomorrowland feel empty while the promenade outside stays crowded.",
-    fix:
-      "Bring it back as \"Stitch's Great Escape, reimagined\": a refreshed family-friendly in-the-round show with a new Stitch animatronic and projection-mapped effects. There are no shoulder restraints and the scare level is lower, so all ages can ride. Outside it gets a lit, refreshed facade, an open entrance and a covered queue facing the promenade.",
-    impact: [
-      { metric: 'Indoor capacity', value: 'A full theater of seats every show cycle comes back online [verify]' },
-      { metric: 'Weather buffer', value: 'Air-conditioned seats that absorb crowds in rain or heat [verify]' },
-      { metric: 'Crowd spread', value: 'Pulls guests off the promenade and into a show (model)' },
-      { metric: 'Guest appeal', value: 'An all-ages show with a popular character, instead of a dark frontage [verify]' },
+    what:
+      'The former Stitch theater reopens as a refreshed, family-friendly in-the-round show with a new Stitch animatronic and projection-mapped effects. There are no shoulder restraints and the scare level is lower, so all ages can ride. Outside it gets a lit facade, an open entrance and a covered queue facing the promenade.',
+    why:
+      'A large show building sits dark on prime promenade frontage, right across from Monsters, Inc. Laugh Floor [verify]. That is indoor capacity the land is not using, and the shuttered frontage makes the west end of Tomorrowland feel empty.',
+    adds: [
+      'Indoor, air-conditioned seats that absorb crowds in rain or heat',
+      'Guests drawn off the promenade and into a show',
+      'An all-ages show with a popular character instead of a dark frontage',
     ],
     cam: { x: -6, y: 34, z: 58 },
   },
 ];
 
-export const AREA_LABELS: { text: string; x: number; y: number; z: number; minor?: boolean; today?: boolean; up?: boolean }[] = [
-  { text: 'Space Mountain', x: 102, y: 32, z: -28 },
+export const AREA_LABELS: { text: string; x: number; y: number; z: number; minor?: boolean }[] = [
+  { text: 'Space Mountain', x: 102, y: 44, z: -28 },
   { text: 'TRON Lightcycle / Run', x: 72, y: 20, z: -104 },
   { text: 'Astro Orbiter', x: 0, y: 38, z: 0 },
   { text: 'PeopleMover', x: 84, y: 14, z: 30 },
-  { text: 'Tomorrowland Speedway', x: -26, y: 6, z: -96, today: true },
-  { text: 'Sugar Rush (indoor racing coaster)', x: -62, y: 10, z: -72, up: true },
+  { text: 'Sugar Rush (indoor racing coaster)', x: -62, y: 10, z: -72 },
   { text: 'Carousel of Progress', x: 64, y: 17, z: 50 },
   { text: "Buzz Lightyear's Space Ranger Spin", x: -24, y: 15, z: 44 },
   { text: 'Monsters, Inc. Laugh Floor', x: -50, y: 14, z: 42 },
   { text: "Cosmic Ray's Starlight Café", x: -26, y: 12, z: -30 },
   { text: 'Merchant of Venus', x: -68, y: 12, z: -30, minor: true },
-  { text: "Stitch's Great Escape (closed)", x: -53, y: 12, z: -10, minor: true, today: true },
   { text: 'Tomorrowland Terrace', x: -79, y: 9, z: 37, minor: true },
   { text: 'Lunching Pad', x: 9, y: 5, z: -12, minor: true },
   { text: 'Star Traders', x: 26, y: 9, z: -22, minor: true },

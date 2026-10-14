@@ -39,10 +39,18 @@ These notes record how the 3D model's layout was set, what it is based on, and w
 | PeopleMover route | Station (Rocket Tower Plaza) → over the Space Mountain entrance plaza → across the railroad and into Space Mountain → along the Carousel of Progress → over the former Galaxy Palace site → through the south show building (Buzz, Laugh Floor queue) → across the promenade → through the north show building → back to the station | Wikipedia / Resorts Gal / wdwmagic route summaries. **The sources disagree on the order** (some put Space Mountain late in the loop). The model draws one closed loop that passes every building in the right area **[confirm the order and direction]** |
 | Railroad | Berm line along the north-east and east edge, passing between the land and Space Mountain and under TRON | Railroad tunnel under TRON (WDWNT); railroad crossing to Space Mountain (Wikipedia PeopleMover summary) |
 
+## Space Mountain design references
+
+The refurbished Space Mountain blends two real buildings. Only written descriptions were used for proportions and details. No official art was copied.
+
+- **Disneyland Paris Space Mountain.** It is a 16-sided building, about 62 m across and 43 m high, with a Victorian, plate-and-rivet exterior. A Columbiad cannon is angled at about 32 degrees, with gold-leaf decoration. Sources give it as 22 m long or as 105 ft for the whole stand **[sources disagree]**. The model borrows the riveted bronze, the brass hoops and a cannon at about 32 degrees on a cradle.
+- **Tokyo Disneyland Space Mountain, opening 2027.** Construction reports describe curved white panels arranged in a row that swoop across the building. They also note thin white strips and a circle of white spires at the top. The model borrows the sleek white shell, the sweeping fins, a swooping ribbon and the crown of spires.
+- The Meridian Starport backstory on the card is original.
+
 ## Open questions for Bryan
 
 1. **PeopleMover loop order:** does it head toward Space Mountain first or go through the show buildings first? Which way does it run (clockwise or counter-clockwise from above)?
-2. **Speedway track shape:** what is the current track shape and loading location since the TRON reroute? The model uses an oval with the queue at the Tomorrowland end.
+2. **Speedway footprint:** what is the current Speedway footprint and loading location since the TRON reroute? The Sugar Rush building is sized to a stylized footprint with the queue at the Tomorrowland end.
 3. **Fantasyland walkway:** which route does it take relative to Cosmic Ray's and the Speedway?
 4. **Smaller placements:**
    - Which side of the station base is the Lunching Pad on?
@@ -52,6 +60,13 @@ These notes record how the 3D model's layout was set, what it is based on, and w
 6. **Scale:** the land is to rough scale (about 2 m per unit). Space Mountain is drawn about 96 m across. Building footprints are approximate.
 
 ## Sources (from search results)
+
+- Wikipedia, Star Wars Hyperspace Mountain (Paris exterior and Columbiad): https://en.wikipedia.org/wiki/Star_Wars_Hyperspace_Mountain
+- DLP Guide, Space Mountain: Mission 2 (Paris dimensions): https://www.dlpguide.com/guidebook/disneyland-park/discoveryland/spacemountainmission2/
+- Park Vault, From the Earth to the Moon (Columbiad stand and angle): https://parkvault.net/tag/columbiad/
+- WDWNT, Tokyo Disneyland new Space Mountain exterior paneling: https://wdwnt.com/2025/09/tokyo-disneyland-space-mountain-paneling/
+- WDWNT, Spires added to Tokyo Disneyland's new Space Mountain: https://wdwnt.com/2025/11/spires-added-to-tokyo-disneylands-new-space-mountain/
+- Wikipedia, Space Mountain (Tokyo Disneyland): https://en.wikipedia.org/wiki/Space_Mountain_(Tokyo_Disneyland)
 
 - Disney Blog, TRON Lightcycle/Run: https://disneyblog.com/destinations/walt-disney-world/magic-kingdom/tomorrowland/tron-lightcycle-run/
 - WDWNT, Full guide to TRON Lightcycle / Run: https://wdwnt.com/2023/04/full-guide-tron-lightcycle-run-walt-disney-world

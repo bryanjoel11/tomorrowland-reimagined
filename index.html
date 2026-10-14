@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#F5F8FB" />
     <title>Tomorrowland Reimagined</title>
-    <meta name="description" content="An interactive 3D model of Magic Kingdom's Tomorrowland, redesigned from an attractions operator's point of view. Today vs Upgraded, with a live guest-flow model." />
+    <meta name="description" content="An interactive 3D model of Magic Kingdom's Tomorrowland, redesigned from an attractions operator's point of view: four upgrades shown in place." />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='8' fill='%23FF6B4A'/%3E%3Cellipse cx='16' cy='16' rx='14.5' ry='5' fill='none' stroke='%231F8FB0' stroke-width='2.2' transform='rotate(-24 16 16)'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
-  <body data-mode="today" data-route="explore">
+  <body data-route="explore">
     <header class="site-header">
       <a class="wordmark" href="#/explore" aria-label="Tomorrowland Reimagined, home">
         <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
@@ -39,7 +39,7 @@
             <button class="welcome-close" id="welcome-close" aria-label="Hide introduction">&#10005;</button>
             <div class="eyebrow">Magic Kingdom / Tomorrowland</div>
             <h1>The land, re-run by someone who ran it.</h1>
-            <p>A live 3D model of Tomorrowland with four upgrades I would make: a new indoor racing coaster, an accessible PeopleMover, Hyperspace Mountain and a reopened Stitch show. Flip between <b>Today</b> and <b>Upgraded</b> and watch the crowds move.</p>
+            <p>A 3D model of Tomorrowland with four upgrades I would make: Sugar Rush, an indoor racing coaster; an accessible PeopleMover; Hyperspace Mountain; and a reopened Stitch show. Tap a pin to see what changed and why.</p>
             <div class="welcome-actions">
               <button class="btn primary" id="welcome-tour">Take the guided tour</button>
               <a class="btn ghost" href="#/about">About the project</a>
@@ -49,37 +49,12 @@
 
           <div class="tools" aria-label="View options">
             <button class="icon-btn" id="btn-labels" title="Toggle labels" aria-label="Toggle labels" aria-pressed="true">Aa</button>
-            <button class="icon-btn" id="btn-pause" title="Pause guest flow" aria-label="Pause guest flow" aria-pressed="false">II</button>
             <button class="icon-btn" id="btn-home" title="Reset view" aria-label="Reset view">&#8962;</button>
             <button class="icon-btn" id="btn-top" title="Top-down map view" aria-label="Top-down map view">&#9638;</button>
           </div>
 
-          <section class="stats" id="stats" aria-label="Guest flow model">
-            <button class="stats-head" id="stats-toggle" aria-expanded="true">
-              <span class="live-dot" aria-hidden="true"></span> Guest flow model
-              <span class="chev" aria-hidden="true">&#9662;</span>
-            </button>
-            <div class="stats-body">
-              <table>
-                <thead><tr><th></th><th class="col-today">Today</th><th class="col-up">Upgraded</th></tr></thead>
-                <tbody>
-                  <tr><td>Avg walk (min)</td><td class="col-today mono" id="s-walk-t">-</td><td class="col-up mono" id="s-walk-u">-</td></tr>
-                  <tr><td>Crowding index</td><td class="col-today mono" id="s-crowd-t">-</td><td class="col-up mono" id="s-crowd-u">-</td></tr>
-                  <tr><td>Ride trips / hr</td><td class="col-today mono" id="s-rides-t">-</td><td class="col-up mono" id="s-rides-u">-</td></tr>
-                  <tr><td>Hottest spot</td><td class="col-today small" id="s-hot-t">-</td><td class="col-up small" id="s-hot-u">-</td></tr>
-                </tbody>
-              </table>
-              <div class="delta" id="s-delta"></div>
-              <p class="fine">Simple agent model, 750 guests, illustrative only. Dot colour shows local crowding.</p>
-            </div>
-          </section>
 
           <div class="dock">
-            <div class="seg" role="group" aria-label="Scenario">
-              <button id="mode-today" class="seg-btn active" aria-pressed="true">Today</button>
-              <button id="mode-up" class="seg-btn" aria-pressed="false">Upgraded</button>
-              <span class="seg-thumb" aria-hidden="true"></span>
-            </div>
             <button class="btn primary" id="btn-tour">Guided tour</button>
           </div>
 
@@ -90,29 +65,30 @@
               <button class="icon-btn small" id="c-close" aria-label="Close">&#10005;</button>
             </div>
             <h2 id="c-title"></h2>
-            <div class="card-scroll">
-              <h3><span class="tag tag-problem">Problem</span></h3>
-              <p id="c-problem"></p>
-              <h3><span class="tag tag-fix">Fix</span></h3>
-              <p id="c-fix"></p>
-              <h3><span class="tag tag-impact">Expected impact</span></h3>
-              <dl id="c-impact"></dl>
-              <div class="readout" id="c-readout"></div>
+            <div class="card-scroll" id="c-scroll">
+              <h3><span class="tag tag-fix">What changed</span></h3>
+              <p id="c-what"></p>
+              <h3><span class="tag tag-problem">Why</span></h3>
+              <p id="c-why"></p>
+              <h3><span class="tag tag-impact">What it adds</span></h3>
+              <ul class="adds" id="c-adds"></ul>
+              <div class="story" id="c-story" hidden></div>
             </div>
             <div class="card-nav">
               <button class="btn ghost" id="c-prev">Prev</button>
-              <span class="mono" id="c-count">1 / 6</span>
+              <span class="mono" id="c-count">1 / 4</span>
               <button class="btn primary" id="c-next">Next</button>
             </div>
           </aside>
 
-          <div class="loading" id="loading"><span>Warming up the guest model…</span></div>
+          <div class="loading" id="loading"><span>Building the land…</span></div>
         </div>
 
         <div class="strip">
-          <div class="strip-item"><span class="strip-num">4</span><span>upgrades, each with a problem, a fix and the metric it should move</span></div>
-          <div class="strip-item"><span class="strip-num">750</span><span>modelled guests walking the real Tomorrowland walkway layout</span></div>
-          <div class="strip-item"><span class="strip-num" id="strip-delta">-</span><span>ride trips per hour in the model once the upgrades land</span></div>
+          <a class="strip-item" href="#/explore/1"><span class="strip-num">01</span><span>Sugar Rush, an indoor dual racing coaster</span></a>
+          <a class="strip-item" href="#/explore/2"><span class="strip-num">02</span><span>A wheelchair-accessible PeopleMover</span></a>
+          <a class="strip-item" href="#/explore/3"><span class="strip-num">03</span><span>Hyperspace Mountain and the Meridian Starport</span></a>
+          <a class="strip-item" href="#/explore/4"><span class="strip-num">04</span><span>Stitch's Great Escape, reimagined</span></a>
           <a class="btn ghost strip-cta" href="#/upgrades">Read the upgrades</a>
         </div>
       </section>
@@ -123,7 +99,7 @@
           <div class="container">
             <div class="eyebrow">The proposal</div>
             <h1 id="up-title">Four upgrades for Tomorrowland</h1>
-            <p class="lede">Each one starts from something I saw on shift. Every card lists the problem, the fix, and what I expect it to move: capacity, waits, accessibility, re-ride demand or guest flow. Items tagged <span class="verify">[verify]</span> are working assumptions I still need to confirm.</p>
+            <p class="lede">Each one starts from something I saw on shift. Every card says what changed in the land, why it is worth doing, and what it adds for guests and for the operation. Items tagged <span class="verify">[verify]</span> are working assumptions I still need to confirm.</p>
           </div>
         </div>
         <div class="container">
@@ -141,25 +117,25 @@
         </div>
         <div class="container prose">
           <p class="lede">I worked attractions in Tomorrowland at Magic Kingdom. Every shift I saw the same things: a Speedway queue that barely moved, guests in wheelchairs who could not ride the PeopleMover with their family, a Space Mountain that looked tired next to TRON, and a dark show building on the busiest stretch of the promenade.</p>
-          <p>This project is the land the way I would run it. It is a 3D model laid out to match the real Tomorrowland, from the hub bridge and Rocket Tower Plaza to Space Mountain, TRON and the Speedway, with four changes I would make from the operator's side. Flip between <b>Today</b> and <b>Upgraded</b> to see each change in place, and watch a simple guest-flow model react.</p>
+          <p>This project is the land the way I would run it. It is a 3D model laid out to match the real Tomorrowland, from the hub bridge and Rocket Tower Plaza to Space Mountain and TRON, with four changes I would make from the operator's side, shown in place.</p>
 
           <div class="about-grid">
             <div class="about-card">
               <h3>What it shows</h3>
-              <p>Operations insight turned into a proposal. I would swap the Speedway for Sugar Rush, an indoor dual racing coaster, and add a ramp-equipped car with a stop-to-board zone to the PeopleMover. I would also refresh Space Mountain as Hyperspace Mountain and reopen Stitch's Great Escape as an all-ages show. Each card names the pain, the fix and the metric it should move.</p>
+              <p>Operations insight turned into a proposal. I would swap the Speedway for Sugar Rush, an indoor dual racing coaster, and give the PeopleMover ramp-equipped cars and a stop-to-board zone. I would refresh Space Mountain as Hyperspace Mountain and reopen Stitch's Great Escape as an all-ages show. Each card says what changed and why.</p>
             </div>
             <div class="about-card">
-              <h3>How the guest model works</h3>
-              <p>750 guests walk a graph of the land's walkways, picking weighted next stops. Walking speed falls as a stretch gets crowded. In Upgraded, the Speedway queue spill moves into the coaster's switchbacks, the reopened Stitch theater takes guests off the promenade, Space Mountain draws a little more demand, and guests in wheelchairs can choose the PeopleMover. It is illustrative, not calibrated to park data.</p>
+              <h3>The Meridian Starport</h3>
+              <p>I wanted Space Mountain to have a story of its own, so I wrote one. A Victorian launch cannon that never fired, a white starport grown around it a century later, and a light-speed jump that finally sends it off. The building blends old-world brass and rivets with a sleek white sculptural shell.</p>
             </div>
             <div class="about-card">
               <h3>How it is built</h3>
-              <p>Vite, TypeScript and three.js. Every building, ride and path is generated in code: no downloaded models, logos or official artwork. Instancing keeps the guests, track and trees fast, and the site is fully static.</p>
+              <p>Vite, TypeScript and three.js. Every building, ride and path is generated in code: no downloaded models, logos or official artwork. Instancing keeps the track, rivets and trees fast, and the site is fully static.</p>
             </div>
           </div>
 
           <h2>What is next</h2>
-          <p>Next I am confirming the [verify] items with people who still work the land, sketching ride-time and capacity numbers for Sugar Rush, and tightening the layout details I flagged in the project notes.</p>
+          <p>Next I am confirming the [verify] items with people who still work the land and tightening the layout details I flagged in the project notes.</p>
           <div class="about-actions">
             <a class="btn primary" href="#/explore">Explore the land</a>
             <a class="btn ghost" href="#/upgrades">Read the upgrades</a>
