@@ -377,31 +377,180 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
 
   const TRAINS = 15;
   const CARS = 4;
+  // Today's cars.
   const carBody = new THREE.InstancedMesh(new THREE.BoxGeometry(3.3, 1.7, 2.6), mats.white, TRAINS * CARS);
   const carWin = new THREE.InstancedMesh(new THREE.BoxGeometry(3.36, 0.45, 2.66), mats.blueGlow, TRAINS * CARS);
   carBody.castShadow = true;
   scene.add(carBody, carWin);
+  // Upgrade 2: redesigned accessible cars. Longer, lower floor, wide side bay
+  // door and a teal accessibility band; a fold-down ramp deploys at the stop.
+  const tealGlow = new THREE.MeshStandardMaterial({ color: 0x1fb5c9, emissive: 0x1fb5c9, emissiveIntensity: 1.6 });
+  const coralMat = new THREE.MeshStandardMaterial({ color: 0xff6b4a, roughness: 0.4, flatShading: true });
+  const nBody = new THREE.InstancedMesh(
+    mergeGeometries([
+      new THREE.BoxGeometry(3.5, 1.5, 2.7).translate(0, -0.1, 0),
+      new THREE.CylinderGeometry(1.35, 1.35, 3.5, 12, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).rotateX(-Math.PI / 2).scale(1, 0.45, 1).translate(0, 0.65, 0),
+    ])!,
+    mats.white,
+    TRAINS * CARS,
+  );
+  const nBand = new THREE.InstancedMesh(new THREE.BoxGeometry(3.56, 0.32, 2.76), tealGlow, TRAINS * CARS);
+  const nWin = new THREE.InstancedMesh(new THREE.BoxGeometry(3.0, 0.5, 2.78), mats.blueGlow, TRAINS * CARS);
+  const nDoor = new THREE.InstancedMesh(new THREE.BoxGeometry(1.7, 1.2, 0.08), coralMat, TRAINS * CARS);
+  nBody.castShadow = true;
+  for (const im of [carBody, carWin, nBody, nBand, nWin, nDoor]) im.frustumCulled = false;
+  scene.add(nBody, nBand, nWin, nDoor);
+
+  // Accessible boarding zone on the station deck: the moving belt here slows
+  // to a stop, with a teal level-boarding strip, gates and an elevator tower.
+  const pmZoneU = (() => {
+    let best = 0;
+    let bd = Infinity;
+    for (let i = 0; i < 1000; i++) {
+      const p = track.getPointAt(i / 1000);
+      const d = Math.hypot(p.x - 0, p.z - 6.5);
+      if (d < bd) { bd = d; best = i / 1000; }
+    }
+    return best;
+  })();
+  const pmZoneD = pmZoneU * totalLen;
+  const zp = track.getPointAt(pmZoneU);
+  const zt = track.getTangentAt(pmZoneU);
+  const zone = new THREE.Group();
+  zone.position.set(zp.x, 0, zp.z);
+  zone.rotation.y = -Math.atan2(zt.z, zt.x);
+  // In local space +x is along the track; -z is the boarding side (toward the deck centre).
+  zone.add(box(13, 0.14, 2.6, tealGlow, 0, 9.22, -2.7));
+  zone.add(box(13, 0.1, 0.25, mats.warmGlow, 0, 9.3, -1.45));
+  for (const x of [-6.5, -2.2, 2.2, 6.5]) {
+    zone.add(cyl(0.12, 0.12, 1.6, 6, mats.silver, x, 10, -4.1));
+  }
+  zone.add(box(13, 0.12, 0.12, tealGlow, 0, 10.8, -4.1));
+  const accessTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#146c86';
+    g.beginPath();
+    g.roundRect(0, 0, 128, 128, 18);
+    g.fill();
+    g.strokeStyle = g.fillStyle = '#ffffff';
+    g.lineWidth = 9;
+    g.lineCap = 'round';
+    g.beginPath(); g.arc(60, 24, 9, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(58, 40); g.lineTo(56, 72); g.lineTo(84, 72); g.lineTo(96, 98); g.stroke();
+    g.beginPath(); g.moveTo(56, 52); g.lineTo(80, 52); g.stroke();
+    g.beginPath(); g.arc(56, 86, 24, 0.4, Math.PI * 1.75); g.stroke();
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const accessSign = mesh(new THREE.PlaneGeometry(2.4, 2.4), new THREE.MeshBasicMaterial({ map: accessTex, side: THREE.DoubleSide, toneMapped: false }), false, false);
+  accessSign.position.set(-7.6, 12.2, -4.1);
+  zone.add(accessSign, cyl(0.1, 0.1, 3, 6, mats.silver, -7.6, 10.6, -4.1));
+  // Fold-down ramp hinged at the bay door of the stopped car.
+  const rampPivot = new THREE.Group();
+  rampPivot.position.set(0, 10.15, -1.4);
+  const rampPlate = box(1.7, 0.1, 1.5, coralMat, 0, 0, -0.75);
+  rampPivot.add(rampPlate);
+  zone.add(rampPivot);
+  scene.add(zone);
+  // Elevator tower from the plaza to the deck.
+  const elev = new THREE.Group();
+  elev.position.set(-9.4, 0, 9.6);
+  elev.add(cyl(1.8, 1.8, 9.4, 16, new THREE.MeshStandardMaterial({ color: 0x9fdcef, transparent: true, opacity: 0.35, roughness: 0.1 }), 0, 4.7, 0));
+  elev.add(cyl(1.95, 1.95, 0.4, 16, mats.silver, 0, 9.6, 0));
+  elev.add(box(2.6, 0.3, 3.2, mats.silver, 1.3, 9.2, -1.6));
+  const cab = cyl(1.4, 1.4, 2.2, 12, tealGlow, 0, 1.2, 0);
+  elev.add(cab);
+  scene.add(elev);
+
   let trackPhase = 0;
+  let pmV = 1;
+  let pmStop = 0; // seconds left at the accessible stop
+  let pmServed = -1;
+  let ramp = 0;
+  let accessible = false;
   const fwd = new THREE.Vector3(1, 0, 0);
-  animators.push((dt) => {
-    trackPhase = (trackPhase + dt * 4.5 * motion) % totalLen;
+  const pmLead = (t: number) => (trackPhase + (t * totalLen) / TRAINS) % totalLen;
+  blends.push((u) => {
+    accessible = u > 0.5;
+    zone.visible = elev.visible = u > 0.01;
+    zone.scale.set(1, Math.max(0.001, u), 1);
+    elev.scale.set(1, Math.max(0.001, u), 1);
+    carBody.visible = carWin.visible = !accessible;
+    nBody.visible = nBand.visible = nWin.visible = nDoor.visible = accessible;
+  });
+  const sc1 = new THREE.Vector3(1, 1, 1);
+  const tmpQ = new THREE.Quaternion();
+  const off = new THREE.Vector3();
+  animators.push((dt, time) => {
+    // Accessible stop: every third train glides to a halt with its bay car at
+    // the boarding zone, the ramp folds down, then the line moves on.
+    let target = 1;
+    if (accessible) {
+      if (pmStop > 0) {
+        pmStop -= dt;
+        target = 0;
+      } else {
+        for (let t = 0; t < TRAINS; t += 3) {
+          const rem = (pmZoneD + 3.6 - pmLead(t) + totalLen) % totalLen;
+          if (pmServed === t) {
+            if (rem > 12 && rem < totalLen - 12) pmServed = -1;
+            continue;
+          }
+          if (rem < 9) {
+            target = Math.max(0, (rem - 0.1) / 9);
+            if (rem < 0.35) {
+              pmStop = 4.5;
+              pmServed = t;
+              target = 0;
+            }
+          }
+        }
+      }
+    }
+    pmV += (target - pmV) * Math.min(1, dt * (target < pmV ? 6 : 1.4));
+    trackPhase = (trackPhase + dt * 4.5 * motion * (accessible ? pmV : 1)) % totalLen;
+    ramp += ((pmStop > 0.8 ? 1 : 0) - ramp) * Math.min(1, dt * 3);
+    rampPivot.rotation.x = Math.PI / 2 - ramp * (Math.PI / 2 + 0.38);
+    rampPlate.visible = ramp > 0.02;
+    cab.position.y = 1.2 + (0.5 - 0.5 * Math.cos(time * 0.5 * motion)) * 7;
     let k = 0;
+    const bodyA = accessible ? nBody : carBody;
     for (let t = 0; t < TRAINS; t++) {
       for (let c = 0; c < CARS; c++) {
-        const d = (trackPhase + (t * totalLen) / TRAINS - c * 3.6 + totalLen) % totalLen;
-        const u = d / totalLen;
-        const p = track.getPointAt(u);
-        const tan = track.getTangentAt(u);
+        const d = (trackPhase + (t * totalLen) / TRAINS - c * (accessible ? 3.8 : 3.6) + totalLen) % totalLen;
+        const uu = d / totalLen;
+        const p = track.getPointAt(uu);
+        const tan = track.getTangentAt(uu);
         q.setFromUnitVectors(fwd, tan);
-        m4.compose(p.setY(11), q, new THREE.Vector3(1, 1, 1));
-        carBody.setMatrixAt(k, m4);
-        m4.compose(p.setY(11.3), q, new THREE.Vector3(1, 1, 1));
-        carWin.setMatrixAt(k, m4);
+        if (accessible) {
+          m4.compose(p.setY(10.95), q, sc1);
+          nBody.setMatrixAt(k, m4);
+          m4.compose(p.setY(10.35), q, sc1);
+          nBand.setMatrixAt(k, m4);
+          m4.compose(p.setY(11.35), q, sc1);
+          nWin.setMatrixAt(k, m4);
+          off.set(0, 0, -1.37).applyQuaternion(q);
+          tmpQ.copy(q);
+          m4.compose(p.setY(10.85).add(off), tmpQ, sc1);
+          nDoor.setMatrixAt(k, m4);
+        } else {
+          m4.compose(p.setY(11), q, sc1);
+          carBody.setMatrixAt(k, m4);
+          m4.compose(p.setY(11.3), q, sc1);
+          carWin.setMatrixAt(k, m4);
+        }
         k++;
       }
     }
-    carBody.instanceMatrix.needsUpdate = true;
-    carWin.instanceMatrix.needsUpdate = true;
+    bodyA.instanceMatrix.needsUpdate = true;
+    if (accessible) {
+      nBand.instanceMatrix.needsUpdate = true;
+      nWin.instanceMatrix.needsUpdate = true;
+      nDoor.instanceMatrix.needsUpdate = true;
+    } else carWin.instanceMatrix.needsUpdate = true;
   });
 
   // ---------- Space Mountain (outside the railroad berm) ----------
@@ -457,6 +606,127 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   exitTube.position.set((ex0.x + ex1.x) / 2, 1.8, (ex0.y + ex1.y) / 2);
   exitTube.rotation.y = -Math.atan2(ex1.y - ex0.y, ex1.x - ex0.x);
   scene.add(exitTube);
+
+  // ---------- Upgrade 3: Hyperspace Mountain refurbishment ----------
+  // Light lines along every rib and spire, an animated light-speed streak
+  // shell over the cone, and a new entrance portal + queue light bars.
+  const hyperLineMat = new THREE.MeshBasicMaterial({ color: 0x7fe9ff, transparent: true, opacity: 0, toneMapped: false });
+  const hyperHot = new THREE.MeshBasicMaterial({ color: 0xc9a2ff, transparent: true, opacity: 0, toneMapped: false });
+  const hyper = new THREE.Group();
+  const glowRibGeo = new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3(prof.map((p) => new THREE.Vector3(p.x + 0.8, p.y + 0.2, 0))),
+    24, 0.16, 4,
+  );
+  for (let i = 0; i < 14; i++) {
+    const r = mesh(glowRibGeo, i % 2 ? hyperHot : hyperLineMat, false, false);
+    r.rotation.y = (i / 14) * Math.PI * 2;
+    hyper.add(r);
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    for (const da of [-0.025, 0.025]) {
+      const ln = cyl(0.12, 0.5, 35, 4, hyperLineMat, Math.cos(a + da) * 27.1, 17.6, Math.sin(a + da) * 27.1);
+      ln.castShadow = false;
+      hyper.add(ln);
+    }
+  }
+  for (const y of [6, 13]) {
+    const band = mesh(new THREE.TorusGeometry(prof[y === 6 ? 2 : 3].x + 0.7, 0.14, 4, 96), hyperHot, false, false);
+    band.rotation.x = Math.PI / 2;
+    band.position.y = y === 6 ? 10.1 : 16.6;
+    hyper.add(band);
+  }
+  const hyperUniforms = { uTime: { value: 0 }, uAmt: { value: 0 } };
+  const streakMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    uniforms: hyperUniforms,
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `uniform float uTime; uniform float uAmt; varying vec2 vUv;
+      float h(float n){ return fract(sin(n*12.9898)*43758.5453); }
+      void main(){
+        float cols = 90.0;
+        float c = floor(vUv.x * cols);
+        float r = h(c);
+        float fx = abs(fract(vUv.x * cols) - 0.5);
+        float line = smoothstep(0.32, 0.0, fx);
+        float s = fract(vUv.y * (1.2 + r) - uTime * (0.35 + r * 0.9) + r * 7.0);
+        float head = smoothstep(0.0, 0.03, s) * smoothstep(0.32, 0.0, s);
+        float a = line * head * uAmt * (0.5 + 0.5 * step(0.4, r));
+        vec3 col = mix(vec3(0.35,0.8,1.0), vec3(0.85,0.7,1.0), r);
+        col = mix(col, vec3(1.0), smoothstep(0.08, 0.0, s));
+        gl_FragColor = vec4(col * a * 3.0, a);
+      }`,
+  });
+  const streakShell = mesh(new THREE.LatheGeometry(prof.map((p) => new THREE.Vector2(p.x + 0.55, p.y + 0.15)), 56), streakMat, false, false);
+  hyper.add(streakShell);
+  dome.add(hyper);
+
+  // New entrance portal and queue facade.
+  const portal = new THREE.Group();
+  portal.position.set(smIn.x, 0, smIn.z);
+  portal.rotation.y = entr.rotation.y;
+  // local +x points toward the dome; the guest side is -x.
+  portal.add(box(1.2, 12, 16, mats.dark, -1.6, 6, 0));
+  for (const z of [-8, 8]) {
+    const fin = box(7, 15, 0.8, mats.white, -2.5, 7.5, z);
+    fin.rotation.y = z > 0 ? 0.25 : -0.25;
+    portal.add(fin);
+    portal.add(box(6.6, 0.25, 0.2, hyperLineMat, -2.5, 14.8, z + (z > 0 ? 0.5 : -0.5)).rotateY(z > 0 ? 0.25 : -0.25));
+  }
+  const ringG = new THREE.Group();
+  ringG.position.set(-2.4, 6.5, 0);
+  ringG.rotation.y = Math.PI / 2;
+  ringG.add(mesh(new THREE.TorusGeometry(4.6, 0.38, 8, 48), hyperLineMat, false, false));
+  ringG.add(mesh(new THREE.TorusGeometry(5.5, 0.14, 6, 48), hyperHot, false, false));
+  const tunnelMat = streakMat.clone();
+  tunnelMat.uniforms = hyperUniforms;
+  const tunnel = mesh(new THREE.CylinderGeometry(4.3, 1.2, 6, 40, 1, true), tunnelMat, false, false);
+  tunnel.rotation.x = Math.PI / 2;
+  tunnel.position.z = 3;
+  ringG.add(tunnel);
+  const ringSegs = new THREE.Group();
+  for (let i = 0; i < 12; i++) {
+    const seg = box(0.9, 0.3, 0.3, hyperHot, Math.cos((i / 12) * Math.PI * 2) * 5.5, Math.sin((i / 12) * Math.PI * 2) * 5.5, 0);
+    seg.rotation.z = (i / 12) * Math.PI * 2 + Math.PI / 2;
+    ringSegs.add(seg);
+  }
+  ringG.add(ringSegs);
+  portal.add(ringG);
+  scene.add(portal);
+  // Light bars along the queue walkway into the portal.
+  const s1n = nodeById('S1');
+  const qBars: THREE.Vector3[] = [];
+  const qLen = Math.hypot(smIn.x - s1n.x, smIn.z - s1n.z);
+  const qpx = -(smIn.z - s1n.z) / qLen;
+  const qpz = (smIn.x - s1n.x) / qLen;
+  for (let d = 4; d < qLen - 3; d += 3.2) {
+    const t = d / qLen;
+    for (const sd of [-1, 1]) qBars.push(new THREE.Vector3(s1n.x + (smIn.x - s1n.x) * t + qpx * 4.4 * sd, 0, s1n.z + (smIn.z - s1n.z) * t + qpz * 4.4 * sd));
+  }
+  const qBarMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.3, 2.6, 0.3), hyperLineMat, qBars.length);
+  qBars.forEach((p, i) => { m4.makeTranslation(p.x, 1.3, p.z); qBarMesh.setMatrixAt(i, m4); });
+  scene.add(qBarMesh);
+  let hyperU = 0;
+  blends.push((u) => {
+    hyperU = u;
+    hyper.visible = u > 0.01;
+    portal.visible = qBarMesh.visible = u > 0.01;
+    portal.scale.set(1, Math.max(0.001, u), 1);
+    qBarMesh.scale.set(1, Math.max(0.001, u), 1);
+    entr.visible = u < 0.6;
+  });
+  animators.push((_dt, time) => {
+    if (hyperU <= 0.01) return;
+    const pulse = 0.75 + 0.25 * Math.sin(time * 2.2 * motion);
+    hyperLineMat.opacity = hyperU * pulse;
+    hyperHot.opacity = hyperU * (1.2 - pulse * 0.5);
+    hyperUniforms.uTime.value = time * motion;
+    hyperUniforms.uAmt.value = hyperU;
+    ringSegs.rotation.z -= _dt * 1.4 * motion;
+  });
 
   // ---------- Walt Disney World Railroad (berm line) ----------
   const rail = new THREE.CatmullRomCurve3(L.railroad.map(([x, z]) => new THREE.Vector3(x, 0, z)));
@@ -552,8 +822,9 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   const trN = nodeById('TR');
   scene.add(box(8, 0.6, 14, mats.white, trN.x, 2.2, trN.z - 9));
 
-  // ---------- Tomorrowland Speedway ----------
+  // ---------- Tomorrowland Speedway (Today) ----------
   const sw = L.speedway;
+  const speedway = new THREE.Group();
   const ellipse = (rx: number, rz: number, cw: boolean) => {
     const s = new THREE.Path();
     s.absellipse(0, 0, rx, rz, 0, Math.PI * 2, cw, 0);
@@ -564,19 +835,19 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   const swTrack = mesh(new THREE.ShapeGeometry(trackShape, 90), mats.asphalt, false, true);
   swTrack.rotation.x = -Math.PI / 2;
   swTrack.position.set(sw.x, 0.07, sw.z);
-  scene.add(swTrack);
+  speedway.add(swTrack);
   for (const [rx, rz] of [[sw.rx + 3.6, sw.rz + 3.6], [sw.rx - 3.6, sw.rz - 3.6]]) {
     const curve = new THREE.EllipseCurve(0, 0, rx, rz, 0, Math.PI * 2, false, 0);
     const p3 = curve.getPoints(140).map((p) => new THREE.Vector3(p.x, 0.5, p.y));
     const railM = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p3, true), 140, 0.22, 4, true), mats.silver, false, false);
     railM.position.set(sw.x, 0, sw.z);
-    scene.add(railM);
+    speedway.add(railM);
   }
   const infield = mesh(new THREE.CircleGeometry(1, 48), mats.foliage, false, true);
   infield.scale.set(sw.rx - 3.4, sw.rz - 3.4, 1);
   infield.rotation.x = -Math.PI / 2;
   infield.position.set(sw.x, 0.05, sw.z);
-  scene.add(infield);
+  speedway.add(infield);
   const swCarColors = [0xff6b4a, 0x4fa8ff, 0xffd166, 0x2ec4b6, 0xf2f5f8, 0xff9f43, 0x5bb8e8, 0xff6b4a];
   const swCars: THREE.Group[] = [];
   const swCarGeo = mergeGeometries([
@@ -587,35 +858,348 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   swCarColors.forEach((col) => {
     const g = new THREE.Group();
     g.add(mesh(swCarGeo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.2, flatShading: true })));
-    scene.add(g);
+    speedway.add(g);
     swCars.push(g);
   });
-  animators.push((_dt, time) => {
-    swCars.forEach((g, i) => {
-      const a = time * (0.1 + i * 0.008) * motion + i * 0.8;
-      const lane = i % 2 ? 1.4 : -1.4;
-      g.position.set(sw.x + Math.cos(a) * (sw.rx + lane), 0.05, sw.z + Math.sin(a) * (sw.rz + lane));
-      g.rotation.y = -Math.atan2(Math.cos(a) * (sw.rz + lane), -Math.sin(a) * (sw.rx + lane));
-    });
-  });
-  // Loading station at the Tomorrowland (east) end + queue switchbacks.
+  // Loading station at the Tomorrowland (east) end.
   const sq = L.speedwayQueue;
-  scene.add(box(16, 5, 7, mats.white, sq.x - 4, 2.5, sq.z - 11));
-  scene.add(box(16.4, 0.4, 7.4, mats.blueGlow, sq.x - 4, 5.2, sq.z - 11));
+  speedway.add(box(16, 5, 7, mats.white, sq.x - 4, 2.5, sq.z - 11));
+  speedway.add(box(16.4, 0.4, 7.4, mats.blueGlow, sq.x - 4, 5.2, sq.z - 11));
+  scene.add(speedway);
+  // Queue switchbacks (shared by both attractions).
   for (let i = 0; i < 6; i++) scene.add(box(15, 0.9, 0.18, mats.silver, sq.x, 0.5, sq.z - 5 + i * 2));
-  // Shade sails (upgrade) - rise from the ground.
-  const shade = new THREE.Group();
-  shade.position.set(sq.x, 0, sq.z);
-  const sailGeo = new THREE.BufferGeometry();
-  sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([-9, 6.5, -7, 9, 5.2, -7, 0, 8.4, 7, 9, 5.2, -7, 9, 7.6, 7, 0, 8.4, 7, -9, 6.5, -7, 0, 8.4, 7, -9, 5.0, 7], 3));
-  sailGeo.computeVertexNormals();
-  shade.add(mesh(sailGeo, mats.sail));
-  for (const [x, z, h] of [[-9, -7, 6.5], [9, -7, 5.2], [0, 7, 8.4], [9, 7, 7.6], [-9, 7, 5]]) shade.add(cyl(0.18, 0.22, h, 6, mats.silver, x, h / 2, z));
-  for (const x of [-5, 1, 7]) shade.add(box(1.8, 1.1, 0.12, mats.auroraGlow, x, 2.1, -1.8));
-  scene.add(shade);
+
+  // ---------- Upgrade 1: Sugar Rush, an indoor dual racing coaster ----------
+  // A candy-themed show building fills the Speedway footprint. Inside, two
+  // side-by-side tracks share one layout: station, launch straight, banked west
+  // turn, airtime hill, banked east turn. The glass upper walls and vaulted
+  // glass roof keep both racing trains visible from the park.
+  const candy = { pink: 0xff7eb6, mint: 0x6ee7c8, lemon: 0xffd166, cherry: 0xff4d6d, cream: 0xfff4f8, grape: 0xb28dff };
+  const candyMat = (c: number, e = 0) =>
+    new THREE.MeshStandardMaterial({ color: c, roughness: 0.35, metalness: 0.05, emissive: c, emissiveIntensity: e, flatShading: true });
+  const coaster = new THREE.Group();
+  coaster.position.set(sw.x, 0, sw.z);
+  // Centre line [x, y, z, bank] relative to the Speedway centre.
+  const crPts: [number, number, number, number][] = [
+    [44, 3, 12, 0], [30, 3, 12, 0], [18, 3.2, 12, 0], [2, 3.6, 12, 0], [-14, 4.5, 12, 0],
+    [-30, 8, 10, 0.25], [-43, 13, 5, 0.8], [-50, 15, -3, 1], [-43, 14, -10, 0.8], [-30, 10, -12, 0.25],
+    [-14, 6, -12, 0], [0, 18, -12, 0], [14, 8, -12, 0], [28, 9, -11, 0.25], [42, 12, -6, 0.8],
+    [50, 9, 2, 1], [48, 4.5, 9, 0.4],
+  ];
+  const centre = new THREE.CatmullRomCurve3(crPts.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, 'centripetal');
+  const bankCurve = new THREE.CatmullRomCurve3(crPts.map(([, , , b]) => new THREE.Vector3(b, 0, 0)), true, 'catmullrom');
+  const Y = new THREE.Vector3(0, 1, 0);
+  const LANE = 2.6;
+  type Frame = { p: THREE.Vector3; tan: THREE.Vector3; up: THREE.Vector3; side: THREE.Vector3 };
+  /** Builds one racing lane offset sideways from the centre line. */
+  const makeLane = (offset: number) => {
+    const N = 320;
+    const pts: THREE.Vector3[] = [];
+    const banks: number[] = [];
+    for (let i = 0; i < N; i++) {
+      const t = centre.getUtoTmapping(i / N, 0);
+      const p = centre.getPoint(t);
+      const tan = centre.getTangent(t);
+      const side = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+      pts.push(p.addScaledVector(side, offset));
+      banks.push(bankCurve.getPoint(t).x);
+    }
+    const curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
+    const len = curve.getLength();
+    const frameAt = (s: number): Frame => {
+      s = ((s % 1) + 1) % 1;
+      const t = curve.getUtoTmapping(s, 0);
+      const p = curve.getPoint(t);
+      const tan = curve.getTangent(t).normalize();
+      const t0 = curve.getTangent((t + 0.995) % 1);
+      const t1 = curve.getTangent((t + 0.005) % 1);
+      const inward = new THREE.Vector3(t1.x - t0.x, 0, t1.z - t0.z);
+      if (inward.lengthSq() > 1e-8) inward.normalize();
+      const bank = banks[Math.floor(t * N) % N];
+      const up = Y.clone().addScaledVector(inward, bank * 1.2).normalize();
+      const side = new THREE.Vector3().crossVectors(tan, up).normalize();
+      up.crossVectors(side, tan).normalize();
+      return { p, tan, up, side };
+    };
+    return { curve, len, frameAt };
+  };
+  const lanes = [makeLane(LANE), makeLane(-LANE)];
+  const basis = new THREE.Matrix4();
+  const stripeA = [candy.pink, candy.mint];
+  const railCols = [candy.mint, candy.lemon];
+  lanes.forEach((lane, li) => {
+    const CR_N = 380;
+    const frames = Array.from({ length: CR_N }, (_, i) => lane.frameAt(i / CR_N));
+    const offsetCurve = (side: number, up: number) =>
+      new THREE.CatmullRomCurve3(frames.map((f) => f.p.clone().addScaledVector(f.side, side).addScaledVector(f.up, up)), true);
+    // Candy-stripe spine (vertex colours alternate with cream).
+    const spineGeo = new THREE.TubeGeometry(offsetCurve(0, -0.5), CR_N, 0.36, 6, true);
+    const cols: number[] = [];
+    const a = new THREE.Color(stripeA[li]);
+    const b = new THREE.Color(candy.cream);
+    for (let r = 0; r <= CR_N; r++) {
+      const c = Math.floor(r / 5) % 2 ? b : a;
+      for (let k = 0; k <= 6; k++) cols.push(c.r, c.g, c.b);
+    }
+    spineGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    coaster.add(mesh(spineGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, flatShading: true }), true, false));
+    const railMat = candyMat(railCols[li], 0.5);
+    for (const sd of [-0.75, 0.75]) coaster.add(mesh(new THREE.TubeGeometry(offsetCurve(sd, 0.05), CR_N, 0.14, 5, true), railMat, false, false));
+    const tieCount = Math.floor(lane.len / 1.8);
+    const ties2 = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 0.2, 1.7), candyMat(candy.cream), tieCount);
+    for (let i = 0; i < tieCount; i++) {
+      const f = lane.frameAt(i / tieCount);
+      basis.makeBasis(f.tan, f.up, f.side);
+      basis.setPosition(f.p.clone().addScaledVector(f.up, -0.15));
+      ties2.setMatrixAt(i, basis);
+    }
+    coaster.add(ties2);
+    const supSpots: THREE.Vector3[] = [];
+    for (let i = 0; i < 46; i++) {
+      const f = lane.frameAt(i / 46);
+      const lp = f.p.clone().addScaledVector(f.up, -0.8);
+      if (lp.y > 2.6) supSpots.push(lp);
+    }
+    const sups = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.28, 0.4, 1, 6), candyMat(candy.lemon), supSpots.length);
+    supSpots.forEach((p, i) => {
+      m4.compose(new THREE.Vector3(p.x, p.y / 2, p.z), new THREE.Quaternion(), new THREE.Vector3(1, p.y, 1));
+      sups.setMatrixAt(i, m4);
+    });
+    coaster.add(sups);
+  });
+  // Launch section: glowing fins along both lanes that flash as the trains launch.
+  const launchMat = candyMat(candy.cherry, 2.4);
+  const finSpots: [number, number][] = [];
+  for (let x = 16; x >= -10; x -= 2) for (const z of [12 + LANE, 12 - LANE]) finSpots.push([x, z]);
+  const fins = new THREE.InstancedMesh(new THREE.BoxGeometry(1.3, 0.45, 0.12), launchMat, finSpots.length);
+  finSpots.forEach(([x, z], i) => {
+    m4.makeTranslation(x, 3.05 + Math.max(0, 18 - x) * 0.04, z);
+    fins.setMatrixAt(i, m4);
+  });
+  coaster.add(fins);
+  // Station: shared island platform between the lanes = two loading sides.
+  const stripeTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#fff4f8';
+    g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#ff4d6d';
+    for (let i = -64; i < 128; i += 16) {
+      g.beginPath();
+      g.moveTo(i, 0); g.lineTo(i + 8, 0); g.lineTo(i + 8 + 64, 64); g.lineTo(i + 64, 64);
+      g.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1, 3);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const pepperMat = new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.3 });
+  const frost = candyMat(candy.cream);
+  coaster.add(box(16, 2.3, 2.6, frost, 37, 1.15, 12));
+  for (const z of [12 + 1.25, 12 - 1.25]) coaster.add(box(16, 0.1, 0.18, candyMat(candy.mint, 1.4), 37, 2.35, z));
+  for (const x of [31, 37, 43]) coaster.add(cyl(0.3, 0.3, 6, 10, pepperMat, x, 5.3, 12));
+
+  // Show building shell.
+  const BX0 = -60;
+  const BX1 = 58;
+  const BZ = 21;
+  const bW = BX1 - BX0;
+  const bCx = (BX0 + BX1) / 2;
+  const WALL = 7;
+  const shell = new THREE.Group();
+  const wallMat = candyMat(candy.pink);
+  shell.add(box(bW, WALL, 0.8, wallMat, bCx, WALL / 2, -BZ));
+  shell.add(box(0.8, WALL, BZ * 2, wallMat, BX0, WALL / 2, 0));
+  shell.add(box(0.8, WALL, BZ * 2, wallMat, BX1, WALL / 2, 0));
+  shell.add(box(bW, WALL, 0.8, wallMat, bCx, WALL / 2, BZ));
+  for (const [w, d, x, z] of [[bW + 1, 0.9, bCx, -BZ], [bW + 1, 0.9, bCx, BZ], [0.9, BZ * 2, BX0, 0], [0.9, BZ * 2, BX1, 0]] as const) {
+    shell.add(box(w, 0.5, d, candyMat(candy.mint, 0.9), x, WALL + 0.25, z));
+  }
+  // Scalloped frosting along the top of the solid wall.
+  const scallopGeo = new THREE.SphereGeometry(0.9, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI);
+  const scallops: THREE.Vector3[] = [];
+  for (let x = BX0 + 1; x < BX1; x += 2) for (const z of [-BZ - 0.5, BZ + 0.5]) scallops.push(new THREE.Vector3(x, WALL - 0.1, z));
+  for (let z = -BZ + 1; z < BZ; z += 2) for (const x of [BX0 - 0.5, BX1 + 0.5]) scallops.push(new THREE.Vector3(x, WALL - 0.1, z));
+  const scal = new THREE.InstancedMesh(scallopGeo, frost, scallops.length);
+  scallops.forEach((p, i) => { m4.makeTranslation(p.x, p.y, p.z); scal.setMatrixAt(i, m4); });
+  shell.add(scal);
+  // Glass upper walls + vaulted glass roof with candy-cane arches.
+  const glass = new THREE.MeshStandardMaterial({ color: 0xffd6ea, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.1, depthWrite: false, side: THREE.DoubleSide });
+  const GH = 10;
+  shell.add(box(bW, GH, 0.2, glass, bCx, WALL + 0.5 + GH / 2, -BZ));
+  shell.add(box(bW, GH, 0.2, glass, bCx, WALL + 0.5 + GH / 2, BZ));
+  const vaultY = WALL + 0.5 + GH;
+  const vaultGeo = new THREE.CylinderGeometry(BZ, BZ, bW, 32, 1, true, -Math.PI / 2, Math.PI);
+  vaultGeo.rotateZ(Math.PI / 2);
+  const vault2 = mesh(vaultGeo, glass, false, false);
+  vault2.scale.set(1, 0.42, 1);
+  vault2.position.set(bCx, vaultY, 0);
+  shell.add(vault2);
+  for (const x of [BX0, BX1]) {
+    const endCap = mesh(new THREE.CircleGeometry(BZ, 32, 0, Math.PI), glass, false, false);
+    endCap.rotation.y = Math.PI / 2;
+    endCap.scale.set(1, 0.42, 1);
+    endCap.position.set(x, vaultY, 0);
+    shell.add(endCap);
+    shell.add(box(0.2, GH, BZ * 2, glass, x, WALL + 0.5 + GH / 2, 0));
+  }
+  const archGeo = new THREE.TorusGeometry(BZ, 0.32, 5, 28, Math.PI);
+  archGeo.rotateY(Math.PI / 2);
+  archGeo.scale(1, 0.42, 1);
+  const archMat = new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.3, emissive: 0xff7eb6, emissiveIntensity: 0.25 });
+  for (let x = BX0; x <= BX1 + 0.1; x += bW / 8) {
+    const ar = mesh(archGeo, archMat, false, false);
+    ar.position.set(x, vaultY, 0);
+    shell.add(ar);
+    for (const z of [-BZ, BZ]) shell.add(cyl(0.3, 0.3, GH, 6, archMat, x, WALL + 0.5 + GH / 2, z));
+  }
+  shell.add(box(bW, 0.1, BZ * 2, new THREE.MeshStandardMaterial({ color: 0x3a2350, roughness: 0.9 }), bCx, 0.08, 0));
+  coaster.add(shell);
+
+  // Entrance facade outside the building on the queue side (south-east corner).
+  const facade = new THREE.Group();
+  facade.position.set(40, 0, BZ + 0.6);
+  facade.add(box(22, 14, 1.2, candyMat(candy.cream), 0, 7, 0));
+  facade.add(box(22.6, 1, 1.6, candyMat(candy.pink, 0.4), 0, 14.3, 0));
+  for (let x = -10.5; x <= 10.6; x += 1.5) facade.add(mesh(scallopGeo, candyMat(candy.pink), false, false).translateX(x).translateY(13.8).translateZ(0.8));
+  // Arched entry
+  facade.add(box(7, 7, 0.4, mats.dark, 0, 3.5, 0.5));
+  const entryArch = mesh(new THREE.TorusGeometry(3.6, 0.5, 6, 24, Math.PI), pepperMat, false, false);
+  entryArch.position.set(0, 7, 0.8);
+  facade.add(entryArch);
+  for (const x of [-3.6, 3.6]) facade.add(cyl(0.5, 0.5, 7, 12, pepperMat, x, 3.5, 0.8));
+  const gumColors = [candy.cherry, candy.lemon, candy.mint, candy.grape];
+  const gumGeo = new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+  for (let i = 0; i < 6; i++) {
+    const gd = mesh(gumGeo, candyMat(gumColors[i % 4], 0.6), true, false);
+    gd.position.set(-9.5 + i * 3.8, 14.8, 0);
+    gd.scale.set(1.2, 1.6, 1.2);
+    facade.add(gd);
+  }
+  const signTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = 128;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#ff7eb6';
+    g.beginPath();
+    g.roundRect(4, 4, 504, 120, 56);
+    g.fill();
+    g.fillStyle = '#fff4f8';
+    g.font = 'bold 70px Michroma, Outfit, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('SUGAR RUSH', 256, 68);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const sign = mesh(new THREE.PlaneGeometry(15, 3.75), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, toneMapped: false }), false, false);
+  sign.position.set(0, 10.4, 0.7);
+  facade.add(sign);
+  coaster.add(facade);
+  // Giant lollipops flanking the entrance.
+  const swirlTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    const sc2 = ['#ff4d6d', '#fff4f8', '#6ee7c8', '#fff4f8'];
+    for (let i = 0; i < 24; i++) {
+      g.fillStyle = sc2[i % 4];
+      g.beginPath();
+      g.moveTo(64, 64);
+      g.arc(64, 64, 64, (i / 24) * Math.PI * 2, ((i + 1) / 24) * Math.PI * 2 + 0.02);
+      g.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const lolliMat = new THREE.MeshStandardMaterial({ map: swirlTex, roughness: 0.3, emissive: 0xffffff, emissiveMap: swirlTex, emissiveIntensity: 0.3 });
+  const lolliHead = new THREE.CylinderGeometry(2.4, 2.4, 0.5, 28).rotateX(Math.PI / 2);
+  for (const [x, h] of [[26, 11], [54, 9]]) {
+    const lp = new THREE.Group();
+    lp.position.set(x, 0, BZ + 3);
+    lp.add(cyl(0.2, 0.2, h, 6, frost, 0, h / 2, 0));
+    lp.add(mesh(lolliHead, lolliMat).translateY(h + 2));
+    coaster.add(lp);
+  }
+
+  // Two racing trains, five cars each.
+  const CR_CARS = 5;
+  const crCarGeo = mergeGeometries([
+    new THREE.BoxGeometry(2.4, 0.85, 1.6).translate(0, 0.6, 0),
+    new THREE.BoxGeometry(0.28, 0.75, 1.5).translate(-0.85, 1.3, 0),
+    new THREE.SphereGeometry(0.85, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(0.8, 0.6, 1).translate(1.1, 1.0, 0),
+  ])!.scale(1.2, 1.2, 1.2);
+  const trainCols = [
+    [candy.cherry, candy.pink, candy.cherry, candy.pink, candy.cherry],
+    [candy.mint, candy.grape, candy.mint, candy.grape, candy.mint],
+  ];
+  const trains = lanes.map((lane, li) => {
+    const im = new THREE.InstancedMesh(crCarGeo, new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.15, flatShading: true }), CR_CARS);
+    for (let i = 0; i < CR_CARS; i++) im.setColorAt(i, new THREE.Color(trainCols[li][i]));
+    im.frustumCulled = false;
+    im.castShadow = true;
+    coaster.add(im);
+    let launchFrom = 0;
+    let launchTo = 0;
+    for (let i = 0; i < 400; i++) {
+      const x = lane.curve.getPointAt(i / 400).x;
+      if (!launchFrom && x < 18) launchFrom = (i / 400) * lane.len;
+      if (!launchTo && x < -14) launchTo = (i / 400) * lane.len;
+    }
+    return { lane, im, pos: (0.42 + li * 0.012) * lane.len, v: 12, launchFrom, launchTo };
+  });
+  scene.add(coaster);
   blends.push((u) => {
-    shade.visible = u > 0.01;
-    shade.scale.set(1, Math.max(0.001, u), 1);
+    speedway.visible = u < 0.99;
+    speedway.scale.set(1, Math.max(0.001, 1 - u), 1);
+    coaster.visible = u > 0.01;
+    coaster.scale.set(1, Math.max(0.001, u), 1);
+  });
+  animators.push((dt, time) => {
+    if (speedway.visible) {
+      swCars.forEach((g, i) => {
+        const a = time * (0.1 + i * 0.008) * motion + i * 0.8;
+        const lane = i % 2 ? 1.4 : -1.4;
+        g.position.set(sw.x + Math.cos(a) * (sw.rx + lane), 0.05, sw.z + Math.sin(a) * (sw.rz + lane));
+        g.rotation.y = -Math.atan2(Math.cos(a) * (sw.rz + lane), -Math.sin(a) * (sw.rx + lane));
+      });
+    }
+    if (!coaster.visible) return;
+    // Lead swaps: each train's pace drifts on a slow sine in opposite phase,
+    // with a soft pull that keeps the race close.
+    const fa = trains[0].pos / trains[0].lane.len;
+    const fb = trains[1].pos / trains[1].lane.len;
+    let gap = fa - fb;
+    gap -= Math.round(gap);
+    let launching = false;
+    trains.forEach((tr, ti) => {
+      const L2 = tr.lane.len;
+      const s = tr.pos;
+      const head = tr.lane.frameAt(s / L2);
+      let target: number;
+      if (s < tr.launchFrom) target = 4;
+      else if (s < tr.launchTo) target = 30;
+      else target = 8 + Math.sqrt(2 * 9.8 * Math.max(0, 20 - head.p.y));
+      const pace = 1 + (ti ? -1 : 1) * 0.07 * Math.sin(time * 0.33) + (ti ? 1 : -1) * gap * 2.2;
+      const inLaunch = s > tr.launchFrom && s < tr.launchTo;
+      if (s > tr.launchFrom - 4 && s < tr.launchTo + 2) launching = true;
+      tr.v += (target * pace - tr.v) * Math.min(1, dt * (inLaunch ? 2.5 : 1.2));
+      tr.pos = (tr.pos + tr.v * dt * motion) % L2;
+      for (let c = 0; c < CR_CARS; c++) {
+        const f = tr.lane.frameAt((tr.pos - c * 3.2) / L2);
+        basis.makeBasis(f.tan, f.up, f.side);
+        basis.setPosition(f.p.clone().addScaledVector(f.up, 0.12));
+        tr.im.setMatrixAt(c, basis);
+      }
+      tr.im.instanceMatrix.needsUpdate = true;
+    });
+    launchMat.emissiveIntensity = launching ? 2.6 + Math.sin(time * 30) * 1.2 : 0.6;
   });
 
   // ---------- Walt Disney's Carousel of Progress ----------
@@ -688,28 +1272,21 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   animators.push((dt) => {
     signRing.rotation.z += dt * 0.6 * motion;
   });
-  // Upgraded: recessed two-lane return-time merge portal at the Buzz entrance.
-  const bzIn = nodeById('BZin');
-  const mergePortal = new THREE.Group();
-  mergePortal.position.set(bzIn.x, 0, bzIn.z + 2);
-  mergePortal.add(box(10, 0.5, 6, mats.white, 0, 5.5, -1));
-  for (const x of [-4.6, 0, 4.6]) mergePortal.add(cyl(0.22, 0.22, 5.5, 6, mats.silver, x, 2.75, -3.6));
-  mergePortal.add(box(4, 0.5, 0.2, mats.blueGlow, -2.3, 4.6, -3.9));
-  mergePortal.add(box(4, 0.5, 0.2, mats.auroraGlow, 2.3, 4.6, -3.9));
-  for (let i = 0; i < 4; i++) mergePortal.add(box(0.15, 0.9, 6, mats.silver, -4.6 + i * 3.06, 0.5, -1));
-  scene.add(mergePortal);
-  blends.push((u) => {
-    mergePortal.visible = u > 0.01;
-    mergePortal.scale.setScalar(Math.max(0.001, u));
-  });
 
-  // ---------- North show building: former Stitch theater, Merchant of Venus, Cosmic Ray's ----------
+  // ---------- North show building ----------
+  // West to east: Merchant of Venus (the old Stitch exit shop), the former
+  // Stitch's Great Escape theater directly across the promenade from Laugh
+  // Floor, then Cosmic Ray's Starlight Café.
   const nb = L.northBldg;
   const nbW = nb.x1 - nb.x0;
   const nbD = nb.z1 - nb.z0;
   scene.add(box(nbW, 10, nbD, mats.white, (nb.x0 + nb.x1) / 2, 5, (nb.z0 + nb.z1) / 2));
   scene.add(box(nbW + 0.6, 0.5, nbD + 0.6, mats.silver, (nb.x0 + nb.x1) / 2, 10.2, (nb.z0 + nb.z1) / 2));
-  for (let i = 0; i < 10; i++) scene.add(box(0.5, 10, 1.4, mats.silver, nb.x0 + 3 + i * 5.6, 5, nb.z1 + 0.6));
+  for (let i = 0; i < 10; i++) {
+    const x = nb.x0 + 3 + i * 5.6;
+    if (x > L.stitch.x0 && x < L.stitch.x1) continue;
+    scene.add(box(0.5, 10, 1.4, mats.silver, x, 5, nb.z1 + 0.6));
+  }
   // Cosmic Ray's: vaulted roof over the east end + glowing band
   const vault = mesh(new THREE.CylinderGeometry(9, 9, 24, 20, 1, false, 0, Math.PI), mats.silver);
   vault.rotation.set(0, 0, Math.PI / 2);
@@ -717,25 +1294,87 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   vault.position.set(nb.x1 - 13, 10, (nb.z0 + nb.z1) / 2 + 2);
   scene.add(vault);
   scene.add(box(26, 0.35, 0.4, mats.warmGlow, nb.x1 - 13, 9.4, nb.z1 + 1.4));
-  // Today's mobile-order pickup counter, facing the promenade.
-  const counter = box(8, 2.4, 1.6, mats.emberGlow, L.pickupToday.x, 1.2, nb.z1 + 1);
-  scene.add(counter);
+  // Merchant of Venus band at the west end.
+  scene.add(box(6, 0.35, 0.4, mats.blueSoft, nb.x0 + 4, 8.6, nb.z1 + 0.5));
+
+  // Former Stitch's Great Escape: in-the-round theater drum on the roof.
+  const sg = L.stitch;
+  const sgCx = (sg.x0 + sg.x1) / 2;
+  const drumMat = new THREE.MeshStandardMaterial({ color: 0x7c8a99, roughness: 0.7, flatShading: true });
+  const drum = cyl(10, 10.5, 5, 28, drumMat, sg.rx, 12.5, sg.rz);
+  scene.add(drum);
+  scene.add(cyl(6, 10.2, 2.4, 28, mats.silver, sg.rx, 16.2, sg.rz));
+  // Today: dark, shuttered frontage.
+  const closedMat = new THREE.MeshStandardMaterial({ color: 0x55606d, roughness: 0.9 });
+  const shutter = new THREE.Group();
+  shutter.add(box(sg.x1 - sg.x0 - 2, 7, 0.5, closedMat, sgCx, 3.5, nb.z1 + 0.3));
+  for (let x = sg.x0 + 2; x < sg.x1 - 1; x += 1.6) shutter.add(box(0.12, 6.6, 0.2, mats.dark, x, 3.4, nb.z1 + 0.6));
+  scene.add(shutter);
+  // Upgraded: refreshed, lit facade with an open entrance and a queue.
+  const sgUp = new THREE.Group();
+  const alienBlue = new THREE.MeshStandardMaterial({ color: 0x3aa6ff, emissive: 0x3aa6ff, emissiveIntensity: 2 });
+  const alienPink = new THREE.MeshStandardMaterial({ color: 0xff6fae, emissive: 0xff6fae, emissiveIntensity: 1.8 });
+  sgUp.add(box(sg.x1 - sg.x0, 0.5, 0.6, alienBlue, sgCx, 9.4, nb.z1 + 0.6));
+  sgUp.add(box(sg.x1 - sg.x0, 0.3, 0.6, alienPink, sgCx, 1.2, nb.z1 + 0.6));
+  // Open doorway (dark portal with a lit frame) facing the promenade.
+  sgUp.add(box(8, 6, 0.3, new THREE.MeshStandardMaterial({ color: 0x0a1830, emissive: 0x16306a, emissiveIntensity: 0.8 }), sg.rx, 3, nb.z1 + 0.45));
+  for (const dx of [-4.2, 4.2]) sgUp.add(box(0.4, 6.4, 0.5, alienBlue, sg.rx + dx, 3.2, nb.z1 + 0.6));
+  sgUp.add(box(8.8, 0.4, 0.5, alienBlue, sg.rx, 6.4, nb.z1 + 0.6));
+  // Canopy over the queue.
+  sgUp.add(box(16, 0.4, 6, mats.white, sg.rx, 5.6, nb.z1 + 3.6));
+  sgUp.add(box(16.2, 0.18, 0.18, alienPink, sg.rx, 5.4, nb.z1 + 6.6));
+  for (const dx of [-7.6, 7.6]) sgUp.add(cyl(0.18, 0.18, 5.6, 6, mats.silver, sg.rx + dx, 2.8, nb.z1 + 6.3));
+  for (let i = 0; i < 3; i++) sgUp.add(box(13, 0.9, 0.16, mats.silver, sg.rx, 0.5, nb.z1 + 2 + i * 1.6));
+  // Projection-mapped drum: animated light bands around the rotunda.
+  const drumBand = mesh(new THREE.CylinderGeometry(10.6, 10.6, 1, 28, 1, true), alienBlue, false, false);
+  drumBand.position.set(sg.rx, 12.5, sg.rz);
+  sgUp.add(drumBand);
+  const orbit = new THREE.Group();
+  orbit.position.set(sg.rx, 12.5, sg.rz);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    orbit.add(box(2.6, 0.5, 0.3, alienPink, Math.cos(a) * 10.7, 1.6, Math.sin(a) * 10.7).rotateY(-a + Math.PI / 2));
+  }
+  sgUp.add(orbit);
+  // Sign over the door.
+  const sgTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = 128;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#0d2a52';
+    g.beginPath();
+    g.roundRect(4, 14, 504, 100, 30);
+    g.fill();
+    g.strokeStyle = '#6fd0ff';
+    g.lineWidth = 6;
+    g.stroke();
+    g.fillStyle = '#e8f6ff';
+    g.font = 'bold 34px Michroma, Outfit, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText("STITCH'S GREAT ESCAPE", 256, 66);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const sgSign = mesh(new THREE.PlaneGeometry(16, 4), new THREE.MeshBasicMaterial({ map: sgTex, transparent: true, toneMapped: false }), false, false);
+  sgSign.position.set(sg.rx, 12.8, nb.z1 + 0.9);
+  sgUp.add(sgSign);
+  scene.add(sgUp);
   blends.push((u) => {
-    counter.scale.y = Math.max(0.01, 1 - u);
-    counter.visible = u < 0.99;
+    shutter.visible = u < 0.99;
+    shutter.scale.set(1, Math.max(0.001, 1 - u), 1);
+    sgUp.visible = u > 0.01;
+    sgUp.scale.set(1, 1, 1);
+    for (const ch of sgUp.children) ch.visible = u > 0.5 || ch === sgSign ? u > 0.01 : u > 0.25;
+    drumMat.color.setHex(u > 0.5 ? 0xdfe6f0 : 0x7c8a99);
+    sgSign.material.opacity = u;
   });
-  // Upgraded pickup pavilion on the quieter north side (facing the Speedway).
-  const pk = L.pickupUp;
-  const pavilion = new THREE.Group();
-  pavilion.position.set(pk.x, 0, pk.z);
-  pavilion.add(box(8, 0.4, 7, mats.white, 0, 4.4, 0));
-  for (const [x, z] of [[-3.6, -3.1], [3.6, -3.1], [-3.6, 3.1], [3.6, 3.1]]) pavilion.add(cyl(0.18, 0.18, 4.4, 6, mats.silver, x, 2.2, z));
-  pavilion.add(box(6, 1.2, 1.2, mats.white, 0, 0.6, 2.4));
-  pavilion.add(box(5, 1.4, 0.15, mats.auroraGlow, 0, 3.3, 3.2));
-  scene.add(pavilion);
-  blends.push((u) => {
-    pavilion.visible = u > 0.01;
-    pavilion.scale.setScalar(Math.max(0.001, u));
+  animators.push((dt, time) => {
+    if (!sgUp.visible) return;
+    orbit.rotation.y += dt * 0.5 * motion;
+    alienBlue.emissiveIntensity = 1.6 + Math.sin(time * 1.7 * motion) * 0.5;
   });
 
   // ---------- Tomorrowland Terrace (south of the bridge, by the moat) ----------
@@ -778,58 +1417,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   scene.add(cyl(3, 3.4, 3.2, 12, mats.white, lp.x, 1.6, lp.z));
   scene.add(cyl(4, 4, 0.4, 12, mats.emberGlow, lp.x, 3.4, lp.z));
 
-  // ---------- Merch cart (upgrade) at the PeopleMover exit ----------
-  const cartN = nodeById('CART');
-  const cart = new THREE.Group();
-  cart.position.set(cartN.x + 3, 0, cartN.z + 3);
-  cart.add(box(3.2, 1.6, 1.8, mats.white, 0, 1.3, 0));
-  for (const [x, z] of [[-1.2, -0.95], [1.2, -0.95], [-1.2, 0.95], [1.2, 0.95]]) {
-    const wh = cyl(0.45, 0.45, 0.25, 10, mats.dark, x, 0.45, z);
-    wh.rotation.x = Math.PI / 2;
-    cart.add(wh);
-  }
-  for (let i = 0; i < 4; i++) cart.add(box(0.85, 0.15, 2.4, i % 2 ? mats.white : mats.emberGlow, -1.35 + i * 0.9, 3.6, 0));
-  for (const x of [-1.5, 1.5]) cart.add(cyl(0.07, 0.07, 1.8, 5, mats.silver, x, 2.7, 0));
-  cart.add(box(0.8, 0.8, 0.8, mats.auroraGlow, 0.6, 2.5, 0));
-  scene.add(cart);
-  blends.push((u) => {
-    cart.visible = u > 0.01;
-    cart.scale.setScalar(Math.max(0.001, u));
-  });
-
-  // ---------- Wayfinding totems (upgrade) ----------
-  const totems = new THREE.Group();
-  const totemSpots = [[-64, -4, 0], [-64, 16, Math.PI], [-26, -6, 0.4], [10, -32, 0.8], [36, 2, -1]];
-  for (const [x, z, r] of totemSpots) {
-    const t = new THREE.Group();
-    t.position.set(x, 0, z);
-    t.rotation.y = r;
-    t.add(box(1.4, 5.2, 0.5, mats.white, 0, 2.6, 0));
-    t.add(box(1.1, 3.4, 0.08, mats.blueGlow, 0, 3, 0.29));
-    t.add(box(1.1, 0.3, 0.08, mats.emberGlow, 0, 4.9, 0.29));
-    totems.add(t);
-  }
-  scene.add(totems);
-  blends.push((u) => {
-    totems.visible = u > 0.01;
-    totems.scale.set(1, Math.max(0.001, u), 1);
-  });
-  // Signage arch on the back path behind the Speedway queue (unsigned today).
-  const n0 = nodeById('N0');
-  const t1n = nodeById('T1');
-  const arch = new THREE.Group();
-  arch.position.set(n0.x + (t1n.x - n0.x) * 0.25, 0, n0.z + (t1n.z - n0.z) * 0.25);
-  arch.rotation.y = -Math.atan2(t1n.z - n0.z, t1n.x - n0.x) + Math.PI / 2;
-  arch.add(cyl(0.25, 0.25, 5, 6, mats.silver, -3.4, 2.5, 0));
-  arch.add(cyl(0.25, 0.25, 5, 6, mats.silver, 3.4, 2.5, 0));
-  arch.add(box(7.4, 0.9, 0.3, mats.blueGlow, 0, 5, 0));
-  scene.add(arch);
-  blends.push((u) => {
-    arch.visible = u > 0.01;
-    arch.scale.set(1, Math.max(0.001, u), 1);
-  });
-
-  // ---------- Planters at the Space Mountain exit / TRON pinch ----------
+  // ---------- Planters along the Space Mountain exit walk ----------
   const j0 = nodeById('T0');
   const j1 = nodeById('T1');
   const pdx = j1.x - j0.x;
@@ -838,24 +1426,16 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
   const perp = new THREE.Vector2(-pdz / plen, pdx / plen);
   const planterGeo = new THREE.CylinderGeometry(2, 2.2, 1.2, 10);
   const treeGeo = new THREE.IcosahedronGeometry(2.2, 0);
-  const planters: { g: THREE.Group; side: number; t: number }[] = [];
   for (const side of [-1, 1]) {
     for (const t of [0.3, 0.7]) {
       const g = new THREE.Group();
       g.add(mesh(planterGeo, mats.white).translateY(0.6));
       g.add(mesh(treeGeo, mats.foliage).translateY(3.4));
+      const off = (7 / 2 + 2.4) * side;
+      g.position.set(j0.x + pdx * t + perp.x * off, 0, j0.z + pdz * t + perp.y * off);
       scene.add(g);
-      planters.push({ g, side, t });
     }
   }
-  const pinchEdge = EDGES.find((e) => e.zone === 'domeExit')!;
-  blends.push((u) => {
-    const w = edgeWidth(pinchEdge, u);
-    for (const p of planters) {
-      const off = (w / 2 + 2.4) * p.side;
-      p.g.position.set(j0.x + pdx * p.t + perp.x * off, 0, j0.z + pdz * p.t + perp.y * off);
-    }
-  });
 
   // ---------- Lamp posts along walkways ----------
   const lampSpots: THREE.Vector3[] = [];
@@ -905,7 +1485,6 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean })
     if (Math.abs(x - L.shop.x) < 11 && Math.abs(z - L.shop.z) < 9) return true;
     if (Math.abs(x - st.x) < 11 && Math.abs(z - st.z) < 9) return true;
     if (Math.abs(x - ld.x) < 11 && Math.abs(z - ld.z) < 9) return true;
-    if (Math.abs(x - pk.x) < 7 && Math.abs(z - pk.z) < 7) return true;
     if (Math.abs(x - sq.x) < 14 && Math.abs(z - sq.z) < 18) return true;
     if (Math.hypot(x - 40, z - 82) < 16) return true;
     for (let i = 0; i <= 60; i++) {

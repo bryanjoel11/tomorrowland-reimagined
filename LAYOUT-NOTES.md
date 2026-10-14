@@ -25,7 +25,7 @@ These notes record how the 3D model's layout was set, what it is based on, and w
 | Walkway to Main Street | South-west, past the Terrace **[confirm the exact route]** | Inferred from the Terrace location |
 | North show building (former Stitch's Great Escape) | North side of the promenade, left after the bridge | Search summaries of the Stitch's Great Escape pages: "Tomorrowland's northern show building"; the PeopleMover runs through it |
 | Cosmic Ray's Starlight Café | East part of the north show building, next to the former Stitch theater, across from the Speedway. It is the first thing you see coming in from Fantasyland | Imagineer quote about Stitch's building being connected to Cosmic Ray's next door; AllEars notes it is across from the Speedway and first seen from Fantasyland |
-| Merchant of Venus | In the north show building between the Stitch theater and Cosmic Ray's. Now used as indoor seating **[confirm the exact position]** | BlogMickey 2026 ("Merchant of Venus signage removed"); summaries say it was themed to Stitch |
+| Merchant of Venus | In the north show building. It was the Stitch exit shop, so the model puts it at the west end of the Stitch bay. Now used as indoor seating **[confirm the exact position]** | BlogMickey 2026 ("Merchant of Venus signage removed"); summaries say it was themed to Stitch |
 | Lunching Pad | Kiosk at the base of the Astro Orbiter / PeopleMover station **[confirm which side]** | Listed in Tomorrowland on park maps; exact side unconfirmed |
 | Tomorrowland Speedway | North / north-west, between Tomorrowland and Fantasyland. The loading area and queue are at the Tomorrowland (east) end. The track is drawn as a stylized oval. The real track is a longer, more complex loop that was rerouted for TRON | Search summaries: across from TRON and Cosmic Ray's; construction-era reports of a Speedway reroute for TRON |
 | Walkway to Fantasyland | Runs north-west past Cosmic Ray's, south of the Speedway **[confirm]** | Inferred from "Cosmic Ray's is the first thing you see entering from Fantasyland" |
@@ -48,7 +48,7 @@ These notes record how the 3D model's layout was set, what it is based on, and w
    - Which side of the station base is the Lunching Pad on?
    - Exactly where is Star Traders?
    - Exactly where is Merchant of Venus inside the north building?
-5. **Cosmic Ray's doors:** where are the main doors and where does mobile-order pickup happen today? Upgrade 3 assumes it is on the promenade side.
+5. **Stitch theater bay:** the model now puts the former Stitch's Great Escape theater directly across the promenade from Laugh Floor and right next to Cosmic Ray's. Merchant of Venus is at the west end, where the old Stitch exit shop was. Is the west-to-east order right, and where exactly are the theater's promenade doors? (Upgrade 4 reopens the theater with its entrance on the promenade.)
 6. **Scale:** the land is to rough scale (about 2 m per unit). Space Mountain is drawn about 96 m across. Building footprints are approximate.
 
 ## Sources (from search results)

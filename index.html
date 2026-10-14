@@ -39,7 +39,7 @@
             <button class="welcome-close" id="welcome-close" aria-label="Hide introduction">&#10005;</button>
             <div class="eyebrow">Magic Kingdom / Tomorrowland</div>
             <h1>The land, re-run by someone who ran it.</h1>
-            <p>A live 3D model of Tomorrowland with six operational upgrades. Flip between <b>Today</b> and <b>Upgraded</b> and watch the crowds move.</p>
+            <p>A live 3D model of Tomorrowland with four upgrades I would make: a new indoor racing coaster, an accessible PeopleMover, Hyperspace Mountain and a reopened Stitch show. Flip between <b>Today</b> and <b>Upgraded</b> and watch the crowds move.</p>
             <div class="welcome-actions">
               <button class="btn primary" id="welcome-tour">Take the guided tour</button>
               <a class="btn ghost" href="#/about">About the project</a>
@@ -65,6 +65,7 @@
                 <tbody>
                   <tr><td>Avg walk (min)</td><td class="col-today mono" id="s-walk-t">-</td><td class="col-up mono" id="s-walk-u">-</td></tr>
                   <tr><td>Crowding index</td><td class="col-today mono" id="s-crowd-t">-</td><td class="col-up mono" id="s-crowd-u">-</td></tr>
+                  <tr><td>Ride trips / hr</td><td class="col-today mono" id="s-rides-t">-</td><td class="col-up mono" id="s-rides-u">-</td></tr>
                   <tr><td>Hottest spot</td><td class="col-today small" id="s-hot-t">-</td><td class="col-up small" id="s-hot-u">-</td></tr>
                 </tbody>
               </table>
@@ -109,9 +110,9 @@
         </div>
 
         <div class="strip">
-          <div class="strip-item"><span class="strip-num">6</span><span>operational upgrades, each with a problem, a fix and the metric it should move</span></div>
+          <div class="strip-item"><span class="strip-num">4</span><span>upgrades, each with a problem, a fix and the metric it should move</span></div>
           <div class="strip-item"><span class="strip-num">750</span><span>modelled guests walking the real Tomorrowland walkway layout</span></div>
-          <div class="strip-item"><span class="strip-num" id="strip-delta">-</span><span>less crowding in the model once the upgrades land</span></div>
+          <div class="strip-item"><span class="strip-num" id="strip-delta">-</span><span>ride trips per hour in the model once the upgrades land</span></div>
           <a class="btn ghost strip-cta" href="#/upgrades">Read the upgrades</a>
         </div>
       </section>
@@ -121,8 +122,8 @@
         <div class="page-hero">
           <div class="container">
             <div class="eyebrow">The proposal</div>
-            <h1 id="up-title">Six upgrades for Tomorrowland</h1>
-            <p class="lede">Each one starts from something I watched go wrong on shift. Every card lists the problem, the fix, and what I expect it to move: throughput, wait accuracy, guest flow or per-cap spend. Items tagged <span class="verify">[verify]</span> are working assumptions I still need to confirm.</p>
+            <h1 id="up-title">Four upgrades for Tomorrowland</h1>
+            <p class="lede">Each one starts from something I saw on shift. Every card lists the problem, the fix, and what I expect it to move: capacity, waits, accessibility, re-ride demand or guest flow. Items tagged <span class="verify">[verify]</span> are working assumptions I still need to confirm.</p>
           </div>
         </div>
         <div class="container">
@@ -139,17 +140,17 @@
           </div>
         </div>
         <div class="container prose">
-          <p class="lede">I worked attractions in Tomorrowland at Magic Kingdom. Every shift I watched the same things go wrong in the same places: exits jamming up, queue merges spilling onto the walkway, mobile-order guests parked in the middle of the promenade.</p>
-          <p>This project is the land the way I would run it. It is a 3D model laid out to match the real Tomorrowland, from the hub bridge and Rocket Tower Plaza to Space Mountain, TRON and the Speedway, with six changes I would make from the operator's side. Flip between <b>Today</b> and <b>Upgraded</b> to see each change in place, and watch a simple guest-flow model react.</p>
+          <p class="lede">I worked attractions in Tomorrowland at Magic Kingdom. Every shift I saw the same things: a Speedway queue that barely moved, guests in wheelchairs who could not ride the PeopleMover with their family, a Space Mountain that looked tired next to TRON, and a dark show building on the busiest stretch of the promenade.</p>
+          <p>This project is the land the way I would run it. It is a 3D model laid out to match the real Tomorrowland, from the hub bridge and Rocket Tower Plaza to Space Mountain, TRON and the Speedway, with four changes I would make from the operator's side. Flip between <b>Today</b> and <b>Upgraded</b> to see each change in place, and watch a simple guest-flow model react.</p>
 
           <div class="about-grid">
             <div class="about-card">
               <h3>What it shows</h3>
-              <p>Operations insight turned into a proposal. Each upgrade names the guest or operator pain, the intervention, and the metric it should move. Two are revenue plays (an add-on window at mobile-order pickup, a cart at a high-volume exit); the rest protect capacity, which is revenue too.</p>
+              <p>Operations insight turned into a proposal. I would swap the Speedway for Sugar Rush, an indoor dual racing coaster, and add a ramp-equipped car with a stop-to-board zone to the PeopleMover. I would also refresh Space Mountain as Hyperspace Mountain and reopen Stitch's Great Escape as an all-ages show. Each card names the pain, the fix and the metric it should move.</p>
             </div>
             <div class="about-card">
               <h3>How the guest model works</h3>
-              <p>750 guests walk a graph of the land's walkways, picking weighted next stops. Walking speed falls as a stretch gets crowded. In Upgraded, the pinch points widen, standing crowds move off the path, and guests use live wait info to route around hot spots. It is illustrative, not calibrated to park data.</p>
+              <p>750 guests walk a graph of the land's walkways, picking weighted next stops. Walking speed falls as a stretch gets crowded. In Upgraded, the Speedway queue spill moves into the coaster's switchbacks, the reopened Stitch theater takes guests off the promenade, Space Mountain draws a little more demand, and guests in wheelchairs can choose the PeopleMover. It is illustrative, not calibrated to park data.</p>
             </div>
             <div class="about-card">
               <h3>How it is built</h3>
@@ -158,7 +159,7 @@
           </div>
 
           <h2>What is next</h2>
-          <p>The current six pins are placeholders positioned on the real layout. Next I am replacing them with my own list from the floor, confirming the [verify] items, and tightening the layout details I flagged in the project notes.</p>
+          <p>Next I am confirming the [verify] items with people who still work the land, sketching ride-time and capacity numbers for Sugar Rush, and tightening the layout details I flagged in the project notes.</p>
           <div class="about-actions">
             <a class="btn primary" href="#/explore">Explore the land</a>
             <a class="btn ghost" href="#/upgrades">Read the upgrades</a>

@@ -11,138 +11,108 @@ export interface Upgrade {
   problem: string;
   fix: string;
   impact: { metric: string; value: string }[];
+  /** Height of the pin above the ground. */
+  pinY?: number;
   /** Camera offset from the pin when flying to it. */
   cam: { x: number; y: number; z: number };
 }
 
-// Placeholder upgrades, positioned to fit the real layout. Bryan will replace
-// them with his own list. Anything tagged [verify] is a working assumption.
+// Bryan's four upgrades. Anything tagged [verify] is a working assumption.
 export const UPGRADES: Upgrade[] = [
   {
-    id: 'sm-exit',
-    title: 'Untangle the Space Mountain exit / TRON path',
-    short: 'SM exit / TRON',
-    area: 'Walkway between the Launch Depot and the Speedway',
-    pos: { x: 45, z: -49 },
-    zone: 'domeExit',
+    id: 'sugar-rush',
+    title: 'Replace the Speedway with Sugar Rush, an indoor dual racing coaster',
+    short: 'Sugar Rush',
+    area: 'Tomorrowland Speedway footprint, north of Cosmic Ray\'s',
+    pos: { x: -24, z: -94 },
+    pinY: 30,
+    zone: 'rideQueue',
     problem:
-      'Space Mountain riders leave through the Launch Depot onto the same walkway guests use to reach the TRON Lightcycle / Run entrance [verify]. Exiting riders head south toward the plaza while TRON guests head north, so at peak the two flows meet head-on in a narrow stretch and the path stalls.',
+      'Tomorrowland Speedway takes up one of the biggest footprints in the land but moves relatively few guests per hour, because each car is loaded and dispatched one at a time [verify]. The result is long waits for a dated experience, the queue spills out toward the walkway on busy days, and the whole attraction sits outdoors in Florida heat, rain and lightning holds [verify].',
     fix:
-      'Widen the stretch to about 20 m by pulling the planter beds back, split it into marked northbound and southbound lanes, and sign the quieter back path behind the Speedway queue as a second way out to the plaza.',
+      'Remove the Speedway and put an indoor dual racing coaster themed to the candy-racing world of Sugar Rush (Wreck-It Ralph) in the same footprint. Two side-by-side tracks launch out of one candy-themed station and race each other through banked turns and an airtime hill, with the lead changing along the way. The show building gets a candy facade, glass upper walls and a vaulted roof, and the entrance and queue sit outside it on the walkway side.',
     impact: [
-      { metric: 'Zone density (model)', value: 'Drops sharply in the model' },
-      { metric: 'Land walk time', value: 'Down in the model' },
-      { metric: 'Exit stoppages', value: 'Fewer unload holds for a blocked exit [verify]' },
-      { metric: 'Cost', value: 'Low: hardscape, landscaping and signs [verify]' },
+      { metric: 'Hourly capacity', value: 'Two loading sides roughly double the dispatches, about 2x one track and well above the Speedway [verify]' },
+      { metric: 'All-weather ops', value: 'Indoors, so it keeps running through rain and heat and only lightning on the launch is a factor [verify]' },
+      { metric: 'Re-ride appeal', value: 'Racing means a different winner each time, so guests come back for the other side [verify]' },
+      { metric: 'Posted wait', value: 'Shorter for the same demand, and the queue moves off the walkway [verify]' },
     ],
-    cam: { x: -40, y: 58, z: 44 },
+    cam: { x: 50, y: 80, z: 96 },
   },
   {
-    id: 'merge',
-    title: 'Merged return-time queue entrance',
-    short: 'Buzz merge',
-    area: "Buzz Lightyear's Space Ranger Spin, entrance",
-    pos: { x: -12, z: 21 },
-    zone: 'merge',
+    id: 'accessible-pm',
+    title: 'A wheelchair-accessible PeopleMover',
+    short: 'Accessible PeopleMover',
+    area: 'PeopleMover station, Rocket Tower Plaza',
+    pos: { x: -4, z: 9 },
+    pinY: 20,
     problem:
-      'Standby and Lightning Lane return-time guests arrive at the same entrance mouth, and the merge happens right at the plaza walkway [verify]. When standby backs up to the door, return-time guests cut across it, the line spills onto the main path, and the merge operator cannot hold a steady ratio [verify].',
+      'To ride the PeopleMover today, guests have to step from a moving platform into a moving car, so guests who use wheelchairs or ECVs must be able to transfer [verify]. Guests who cannot transfer simply cannot ride, and their whole party is often left out.',
     fix:
-      'Move the merge inside the queue building. Two clearly marked lanes leave the walkway, one tap-point podium handles return-time scans, and the merge gate sits inside where one operator can see both lines. Post the standby wait at the lane split.',
+      'Redesign the cars with a wheelchair bay and a fold-down ramp, and add an accessible boarding zone on the platform where the moving belt and the train slow to a stop for a few seconds to let a guest roll on and off. The rest of the platform keeps loading as it does today.',
     impact: [
-      { metric: 'Queue spill onto walkway', value: 'Removed in the model' },
-      { metric: 'Standby wait accuracy', value: 'Within about 5 min of posted [verify]' },
-      { metric: 'Effective throughput', value: '+3 to 5% from fewer merge-related load stops [verify]' },
-      { metric: 'Guest recovery', value: 'Fewer line disputes at the entrance [verify]' },
+      { metric: 'Accessibility', value: 'Guests who cannot transfer can ride without leaving their chair' },
+      { metric: 'Inclusive capacity', value: 'About 4% more guests able to ride in the model [verify]' },
+      { metric: 'Throughput cost', value: 'Short, occasional stops; small hourly impact [verify]' },
+      { metric: 'Guest satisfaction', value: 'Whole parties ride together; fewer recovery cases [verify]' },
     ],
-    cam: { x: -20, y: 60, z: -34 },
+    cam: { x: -20, y: 20, z: 30 },
   },
   {
-    id: 'pickup',
-    title: "Relocate Cosmic Ray's mobile-order pickup",
-    short: 'Mobile pickup',
-    area: "Cosmic Ray's Starlight Café, promenade side",
-    pos: { x: -34, z: -3 },
-    zone: 'pickup',
+    id: 'hyperspace',
+    title: 'Space Mountain refurbishment: Hyperspace Mountain',
+    short: 'Hyperspace Mountain',
+    area: 'Space Mountain exterior, entrance and ride',
+    pos: { x: 74, z: -14 },
+    pinY: 18,
+    zone: 'smEntrance',
     problem:
-      'At lunch and dinner peaks, mobile-order guests wait for "order ready" outside the doors on the main promenade side [verify]. Twenty or thirty people standing still [verify] narrow the busiest walkway between the hub bridge and the plaza.',
+      'Space Mountain\'s exterior and ride experience are showing their age [verify]. The dome reads as a plain white building after dark, the entrance is easy to walk past, and the in-ride effects have not kept pace with newer coasters like TRON next door [verify].',
     fix:
-      'Move pickup to a dedicated window on the quieter north side, facing the Speedway and the Fantasyland walkway, with its own ready board. Send each guest a push notification with a pickup slot. Put grab-and-go drinks and desserts at the window.',
+      'Refurbish the exterior with glowing light lines along the ribs and spires, an animated hyperspace light show across the dome at night, and a new entrance and queue facade. Inside, add an onboard light-speed effects package: hyperspace jump projections, synced audio and lighting [verify].',
     impact: [
-      { metric: 'Promenade usable width', value: 'Restored in the model' },
-      { metric: 'Pickup handoff time', value: 'About -30% [verify]' },
-      { metric: 'Per-cap F&B', value: '+$0.40 to $0.80 per mobile order from add-ons at the window [verify]' },
-      { metric: 'Seat turns at peak', value: 'Faster, less congestion at the doors [verify]' },
+      { metric: 'Re-ride demand', value: 'More repeat rides from a fresh experience [verify]' },
+      { metric: 'Guest appeal', value: 'A night-time landmark that pulls guests to the east end [verify]' },
+      { metric: 'Merch tie-in', value: 'Hyperspace-themed products at the Launch Depot exit shop [verify]' },
+      { metric: 'Trade-off', value: 'Higher demand adds some crowding at the entrance (model)' },
     ],
-    cam: { x: 16, y: 52, z: 48 },
+    cam: { x: -46, y: 54, z: 62 },
   },
   {
-    id: 'shade',
-    title: 'Shaded, interactive Speedway queue',
-    short: 'Speedway queue',
-    area: 'Tomorrowland Speedway, queue at the Tomorrowland end',
-    pos: { x: 28, z: -66 },
+    id: 'stitch',
+    title: "Reopen Stitch's Great Escape, reimagined",
+    short: "Stitch's Great Escape",
+    area: 'North show building, next to Cosmic Ray\'s, across from Laugh Floor',
+    pos: { x: -53, z: -14 },
+    pinY: 20,
+    zone: 'promenade',
     problem:
-      'Much of the Speedway queue is out on open pavement [verify]. On summer afternoons the posted wait plus the heat drives guests to give up on the line, raises heat complaints and first-aid visits [verify], and leaves the attraction running below capacity while the line still looks long.',
+      "A large show building sits dark on prime promenade frontage, right across from Monsters, Inc. Laugh Floor [verify]. That is indoor capacity the land is not using, and the shuttered facade makes the west end of Tomorrowland feel empty while the promenade outside stays crowded.",
     fix:
-      'Put tensile shade sails over the switchbacks, add misting fans, and install interactive pit-crew screens at the turns (reaction-time games and a lap-time leaderboard).',
+      "Bring it back as \"Stitch's Great Escape, reimagined\": a refreshed family-friendly in-the-round show with a new Stitch animatronic and projection-mapped effects. There are no shoulder restraints and the scare level is lower, so all ages can ride. Outside it gets a lit, refreshed facade, an open entrance and a covered queue facing the promenade.",
     impact: [
-      { metric: 'Perceived wait', value: '-20 to 30% for occupied vs. idle waiting [verify]' },
-      { metric: 'Afternoon balk rate', value: 'Lower, so utilization goes up [verify]' },
-      { metric: 'Heat incidents', value: 'Fewer first-aid calls from the queue [verify]' },
-      { metric: 'Revenue', value: 'Screens are a sponsor-ready surface [verify]' },
+      { metric: 'Indoor capacity', value: 'A full theater of seats every show cycle comes back online [verify]' },
+      { metric: 'Weather buffer', value: 'Air-conditioned seats that absorb crowds in rain or heat [verify]' },
+      { metric: 'Crowd spread', value: 'Pulls guests off the promenade and into a show (model)' },
+      { metric: 'Guest appeal', value: 'An all-ages show with a popular character, instead of a dark frontage [verify]' },
     ],
-    cam: { x: -30, y: 48, z: 46 },
-  },
-  {
-    id: 'cart',
-    title: 'Merch cart at the PeopleMover exit',
-    short: 'Merch cart',
-    area: 'Rocket Tower Plaza, PeopleMover exit',
-    pos: { x: 25, z: 15 },
-    problem:
-      'The PeopleMover is a continuous loader that unloads a steady stream of relaxed guests into Rocket Tower Plaza [verify]. There is no retail touchpoint right at the exit, so that spending intent drifts away.',
-    fix:
-      'Park a small cart in the alcove by the exit, off the walking line. Stock ride-themed pins, light-up toys for dusk, and cold drinks. Mobile pay, one operator.',
-    impact: [
-      { metric: 'Conversion', value: '2 to 4% of exiting guests [verify]' },
-      { metric: 'Land per-cap merch', value: '+$0.30 to $0.60 [verify]' },
-      { metric: 'Walkway impact', value: 'None: the cart sits in an alcove (model)' },
-      { metric: 'Payback', value: 'Weeks, not years, for a cart and one position [verify]' },
-    ],
-    cam: { x: -24, y: 40, z: 40 },
-  },
-  {
-    id: 'wayfinding',
-    title: 'Live wayfinding at the hub bridge',
-    short: 'Wayfinding',
-    area: 'Tomorrowland entrance from the castle hub',
-    pos: { x: -64, z: -6 },
-    problem:
-      'Guests come off the hub bridge and default to the busiest route toward Space Mountain and TRON. The back path behind the Speedway queue and the Carousel of Progress side stay quiet, and nothing at the entrance says where the short waits are.',
-    fix:
-      'Install digital wait-time totems at the bridge and at junctions inside the land, showing live waits and a suggested route, backed by app nudges. Sign the quiet back path.',
-    impact: [
-      { metric: 'Routing (model)', value: 'Guests steer around hot spots in real time' },
-      { metric: 'Load balance', value: 'More use of Carousel of Progress and the PeopleMover [verify]' },
-      { metric: 'Avg walk time', value: 'Down in the model' },
-      { metric: 'Per-cap upside', value: 'Totems can push dining and merch offers [verify]' },
-    ],
-    cam: { x: -40, y: 48, z: 50 },
+    cam: { x: -6, y: 34, z: 58 },
   },
 ];
 
-export const AREA_LABELS: { text: string; x: number; y: number; z: number; minor?: boolean }[] = [
+export const AREA_LABELS: { text: string; x: number; y: number; z: number; minor?: boolean; today?: boolean; up?: boolean }[] = [
   { text: 'Space Mountain', x: 102, y: 32, z: -28 },
   { text: 'TRON Lightcycle / Run', x: 72, y: 20, z: -104 },
   { text: 'Astro Orbiter', x: 0, y: 38, z: 0 },
   { text: 'PeopleMover', x: 84, y: 14, z: 30 },
-  { text: 'Tomorrowland Speedway', x: -26, y: 6, z: -96 },
+  { text: 'Tomorrowland Speedway', x: -26, y: 6, z: -96, today: true },
+  { text: 'Sugar Rush (indoor racing coaster)', x: -62, y: 10, z: -72, up: true },
   { text: 'Carousel of Progress', x: 64, y: 17, z: 50 },
   { text: "Buzz Lightyear's Space Ranger Spin", x: -24, y: 15, z: 44 },
   { text: 'Monsters, Inc. Laugh Floor', x: -50, y: 14, z: 42 },
-  { text: "Cosmic Ray's Starlight Café", x: -28, y: 14, z: -30 },
-  { text: 'Merchant of Venus', x: -46, y: 12, z: -30, minor: true },
-  { text: "Stitch's Great Escape (closed)", x: -62, y: 12, z: -30, minor: true },
+  { text: "Cosmic Ray's Starlight Café", x: -26, y: 12, z: -30 },
+  { text: 'Merchant of Venus', x: -68, y: 12, z: -30, minor: true },
+  { text: "Stitch's Great Escape (closed)", x: -53, y: 12, z: -10, minor: true, today: true },
   { text: 'Tomorrowland Terrace', x: -79, y: 9, z: 37, minor: true },
   { text: 'Lunching Pad', x: 9, y: 5, z: -12, minor: true },
   { text: 'Star Traders', x: 26, y: 9, z: -22, minor: true },

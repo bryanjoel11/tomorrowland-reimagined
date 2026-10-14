@@ -6,8 +6,14 @@ import { NODES, EDGES, DESTS, ZoneKey, DestDef } from './layout';
 /** Density (guests per m²) at which walking speed bottoms out. */
 const D_JAM = 1.1;
 const MIN_SPEED = 0.18;
-/** Guests standing still in the walkway today (mobile-order crowd, queue spill). */
-const STANDING: Partial<Record<ZoneKey, number>> = { pickup: 26, merge: 12 };
+/** Guests standing still in the walkway (queue spill). */
+const STANDING: Partial<Record<ZoneKey, [number, number]>> = {
+  // Today the Speedway's slow-loading queue spills onto the walkway [verify];
+  // the coaster's covered station queue keeps most of the line off it.
+  rideQueue: [22, 4],
+};
+/** Share of guests who use a wheelchair or ECV and cannot transfer [verify]. */
+export const WHEELCHAIR_SHARE = 0.04;
 /** Sim runs fast-forwarded: ~5 m/s on screen vs ~1.25 m/s real walking. */
 export const REAL_TIME_FACTOR = 4;
 
@@ -42,9 +48,15 @@ interface Agent {
   x: number;
   z: number;
   visible: boolean;
+  wheelchair: boolean;
 }
 
 export interface SimStats {
+  /** Ride trips per real hour, per attraction key, and in total. */
+  ridesPerHour: Record<string, number>;
+  totalRidesPerHour: number;
+  /** Share of guests who can ride the PeopleMover. */
+  pmAccess: number;
   avgWalkMin: number;
   crowdIndex: number;
   zoneDensity: Record<ZoneKey, number>;
@@ -73,7 +85,9 @@ export class Sim {
   private legs: number[] = [];
   private legPtr = 0;
   private crowdEma = 0;
-  private zoneEma: Record<ZoneKey, number> = { domeExit: 0, merge: 0, pickup: 0 };
+  private rideCount: Record<string, number> = {};
+  private rideRate: Record<string, number> = {};
+  private zoneEma: Record<ZoneKey, number> = { rideQueue: 0, smEntrance: 0, promenade: 0 };
 
   constructor(count: number, t: number, seed = 7) {
     this.t = t;
@@ -112,13 +126,25 @@ export class Sim {
     return e.wToday + (e.wUp - e.wToday) * this.t;
   }
 
-  private pickDest(exclude?: DestDef): DestDef {
-    const list = DESTS.filter((d) => d !== exclude && (!d.upOnly || this.t > 0.5));
+  private weight(d: DestDef) {
+    return d.weight + ((d.weightUp ?? d.weight) - d.weight) * this.t;
+  }
+
+  private pickDest(ag: Agent): DestDef {
+    const up = this.t > 0.5;
+    const list = DESTS.filter(
+      (d) =>
+        d !== ag.dest &&
+        (!d.upOnly || up) &&
+        (!d.todayOnly || !up) &&
+        // Today's PeopleMover needs guests to transfer from a wheelchair.
+        !(ag.wheelchair && d.key === 'peoplemover' && !up),
+    );
     let total = 0;
-    for (const d of list) total += d.weight;
+    for (const d of list) total += this.weight(d);
     let r = this.rand() * total;
     for (const d of list) {
-      r -= d.weight;
+      r -= this.weight(d);
       if (r <= 0) return d;
     }
     return list[list.length - 1];
@@ -126,7 +152,9 @@ export class Sim {
 
   private spawn() {
     const hub = this.nodeIdx.get('HUB')!;
-    const dest = DESTS[Math.floor(this.rand() * 7)];
+    const up = this.t > 0.5;
+    const rides = DESTS.filter((d) => d.ride && (!d.upOnly || up) && (!d.todayOnly || !up));
+    const dest = rides[Math.floor(this.rand() * rides.length)];
     const a: Agent = {
       edge: -1,
       dir: 1,
@@ -141,6 +169,7 @@ export class Sim {
       x: 0,
       z: 0,
       visible: false,
+      wheelchair: this.rand() < WHEELCHAIR_SHARE,
     };
     // Start everyone "inside" a random attraction so the land fills evenly.
     a.node = this.nodeIdx.get(dest.exit)!;
@@ -149,14 +178,13 @@ export class Sim {
     this.agents.push(a);
   }
 
-  /** Dijkstra; Upgraded adds live congestion info (the wayfinding upgrade). */
+  /** Dijkstra shortest path; unsigned paths cost extra. */
   private route(from: number, to: number): number[] {
     const n = NODES.length;
     const dist = new Float64Array(n).fill(Infinity);
     const prev = new Int32Array(n).fill(-1);
     const done = new Uint8Array(n);
     dist[from] = 0;
-    const informed = this.t > 0.5;
     for (;;) {
       let u = -1;
       let best = Infinity;
@@ -168,8 +196,7 @@ export class Sim {
         if (this.width(e) < 1) continue;
         const v = e.a === u ? e.b : e.a;
         let cost = e.len;
-        if (e.unsigned && !informed) cost *= 2.2; // nobody knows it's there
-        if (informed) cost *= 1 + 1.6 * Math.min(1.5, e.density / D_JAM);
+        if (e.unsigned) cost *= 2.2; // a back path few guests know about
         if (dist[u] + cost < dist[v]) { dist[v] = dist[u] + cost; prev[v] = u; }
       }
     }
@@ -198,7 +225,7 @@ export class Sim {
   }
 
   private beginLeg(ag: Agent) {
-    ag.dest = this.pickDest(ag.dest);
+    ag.dest = this.pickDest(ag);
     const target = this.nodeIdx.get(ag.dest.entry)!;
     ag.path = this.route(ag.node, target);
     ag.legTime = 0;
@@ -221,7 +248,8 @@ export class Sim {
     for (const ag of this.agents) if (ag.edge >= 0) edges[ag.edge].count++;
     for (const e of edges) {
       const w = this.width(e);
-      const standing = e.zone ? (STANDING[e.zone] ?? 0) * (1 - this.t) : 0;
+      const st = e.zone ? STANDING[e.zone] : undefined;
+      const standing = st ? st[0] + (st[1] - st[0]) * this.t : 0;
       e.density = w > 0.5 ? (e.count + standing) / (e.len * w) : 0;
     }
 
@@ -234,7 +262,7 @@ export class Sim {
         ag.visible = visibleDwell;
         if (ag.dwell <= 0) {
           ag.node = this.nodeIdx.get(ag.dest.exit)!;
-          if (ag.dest.upOnly && this.t <= 0.5) ag.node = this.nodeIdx.get('PMx')!;
+          if (ag.dest.ride) this.rideCount[ag.dest.key] = (this.rideCount[ag.dest.key] ?? 0) + 1;
           ag.x = NODES[ag.node].x;
           ag.z = NODES[ag.node].z;
           this.beginLeg(ag);
@@ -272,6 +300,15 @@ export class Sim {
       ag.visible = true;
     }
 
+    // Ride rates: one-minute (sim) moving average of completions.
+    const kr = Math.min(1, dt / 60);
+    for (const d of DESTS) {
+      if (!d.ride) continue;
+      const n = this.rideCount[d.key] ?? 0;
+      this.rideCount[d.key] = 0;
+      const r = this.rideRate[d.key] ?? 0;
+      this.rideRate[d.key] = r + (n / dt - r) * kr;
+    }
     const k = Math.min(1, dt * 0.5);
     this.crowdEma += ((walking ? (crowdSum / walking) * 100 : 0) - this.crowdEma) * k;
     for (const e of edges) {
@@ -281,11 +318,22 @@ export class Sim {
 
   stats(): SimStats {
     const avg = this.legs.length ? this.legs.reduce((a, b) => a + b, 0) / this.legs.length : 0;
-    let worst: ZoneKey = 'domeExit';
+    let worst: ZoneKey = 'promenade';
     (Object.keys(this.zoneEma) as ZoneKey[]).forEach((z) => {
       if (this.zoneEma[z] > this.zoneEma[worst]) worst = z;
     });
+    // Sim seconds are fast-forwarded by REAL_TIME_FACTOR.
+    const perHour: Record<string, number> = {};
+    let total = 0;
+    for (const [key, r] of Object.entries(this.rideRate)) {
+      perHour[key] = (r * 3600) / REAL_TIME_FACTOR;
+      total += perHour[key];
+    }
+    const up = this.t > 0.5;
     return {
+      ridesPerHour: perHour,
+      totalRidesPerHour: total,
+      pmAccess: up ? 1 : 1 - this.agents.filter((a) => a.wheelchair).length / this.agents.length,
       avgWalkMin: (avg * REAL_TIME_FACTOR) / 60,
       crowdIndex: this.crowdEma,
       zoneDensity: { ...this.zoneEma },

@@ -220,6 +220,8 @@ body[data-mode='upgraded'] .stats th.col-up { color: var(--teal); }
 }
 .area-label.minor { font: 500 10.5px/1 var(--body); letter-spacing: 0.02em; text-transform: none; padding: 4px 8px; background: rgba(255, 255, 255, 0.55); color: var(--ink); }
 body.no-labels .area-label { opacity: 0; }
+body:not([data-mode="upgraded"]) .area-label.up { display: none; }
+body[data-mode="upgraded"] .area-label.today { display: none; }
 .pin {
   pointer-events: auto; display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 4px;
   border-radius: 999px; border: 2px solid var(--coral); background: var(--white); color: var(--ink);

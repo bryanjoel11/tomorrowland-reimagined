@@ -82,7 +82,7 @@ for (let i = 0; i < 160 / SIM_DT; i++) {
 // ---------- Labels & pins ----------
 for (const l of AREA_LABELS) {
   const el = document.createElement('div');
-  el.className = l.minor ? 'area-label minor' : 'area-label';
+  el.className = 'area-label' + (l.minor ? ' minor' : '') + (l.today ? ' today' : '') + (l.up ? ' up' : '');
   el.textContent = l.text;
   const o = new CSS2DObject(el);
   o.position.set(l.x, l.y, l.z);
@@ -104,11 +104,13 @@ UPGRADES.forEach((u, i) => {
   });
   btn.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   const o = new CSS2DObject(btn);
-  o.position.set(u.pos.x, 13.5, u.pos.z);
+  const py = u.pinY ?? 13.5;
+  o.position.set(u.pos.x, py, u.pos.z);
   scene.add(o);
   pinBtns.push(btn);
   const beam = new THREE.Mesh(beamGeo, beamMat);
   beam.position.set(u.pos.x, 0, u.pos.z);
+  beam.scale.y = py / 13.5;
   scene.add(beam);
   const base = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.7, 24).rotateX(-Math.PI / 2), beamMat);
   base.position.set(u.pos.x, 0.25, u.pos.z);
@@ -255,16 +257,46 @@ function renderStats(force = false) {
   $('s-crowd-u').textContent = statsU.crowdIndex.toFixed(0);
   $('s-hot-t').textContent = ZONE_LABELS[statsT.worstZone];
   $('s-hot-u').textContent = statsU.zoneDensity[statsU.worstZone] < 0.2 ? 'None above comfort' : ZONE_LABELS[statsU.worstZone];
-  const dw = (1 - statsU.avgWalkMin / Math.max(0.01, statsT.avgWalkMin)) * 100;
+  $('s-rides-t').textContent = fmtK(statsT.totalRidesPerHour);
+  $('s-rides-u').textContent = fmtK(statsU.totalRidesPerHour);
+  const dr = (statsU.totalRidesPerHour / Math.max(1, statsT.totalRidesPerHour) - 1) * 100;
   const dc = (1 - statsU.crowdIndex / Math.max(0.01, statsT.crowdIndex)) * 100;
-  $('s-delta').textContent = `Upgraded: ${dw.toFixed(0)}% shorter walks, ${dc.toFixed(0)}% less crowding`;
-  $('strip-delta').textContent = `${dc.toFixed(0)}%`;
+  const sgn = (v: number) => (v >= 0 ? '+' : '') + v.toFixed(0);
+  const crowd = Math.abs(dc) < 5 ? 'crowding about the same' : dc > 0 ? `${dc.toFixed(0)}% less crowding` : `${(-dc).toFixed(0)}% more crowding`;
+  $('s-delta').textContent = `Upgraded: ${sgn(dr)}% ride trips, ${crowd}`;
+  $('strip-delta').textContent = `${sgn(dr)}%`;
+}
+const fmtK = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n.toFixed(0));
+function rideRow(label: string, a: number, b: number) {
+  const max = Math.max(a, b, 1);
+  return `<div>${label}</div>
+      <div>Today <b>${fmtK(a)}/hr</b></div>
+      <div class="bar"><i style="width:${((a / max) * 100).toFixed(0)}%;background:linear-gradient(90deg,#ff9f43,#ff6b4a)"></i></div>
+      <div>Upgraded <b>${fmtK(b)}/hr</b></div>
+      <div class="bar"><i style="width:${((b / max) * 100).toFixed(0)}%;background:#1f8fb0"></i></div>`;
 }
 function renderReadout() {
   if (current < 0) return;
   const u = UPGRADES[current];
   const el = $('c-readout');
-  if (u.zone) {
+  const rT = statsT.ridesPerHour;
+  const rU = statsU.ridesPerHour;
+  const qd = (z: keyof typeof statsT.zoneDensity) =>
+    `${ZONE_LABELS[z]} density: <b>${Math.min(100, (statsT.zoneDensity[z] / 1.1) * 100).toFixed(0)}%</b> today vs <b>${Math.min(100, (statsU.zoneDensity[z] / 1.1) * 100).toFixed(0)}%</b> upgraded (share of jam density).`;
+  if (u.id === 'sugar-rush') {
+    el.innerHTML = `Live model readout: ride trips per hour<br>` + rideRow('Speedway today vs Sugar Rush upgraded', rT.speedway ?? 0, rU.sugarRush ?? 0) + `<div class="small">${qd('rideQueue')}</div>`;
+  } else if (u.id === 'accessible-pm') {
+    el.innerHTML = `Live model readout: share of modelled guests able to ride the PeopleMover
+      <div>Today <b>${(statsT.pmAccess * 100).toFixed(1)}%</b></div>
+      <div class="bar"><i style="width:${(statsT.pmAccess * 100).toFixed(1)}%;background:linear-gradient(90deg,#ff9f43,#ff6b4a)"></i></div>
+      <div>Upgraded <b>${(statsU.pmAccess * 100).toFixed(1)}%</b></div>
+      <div class="bar"><i style="width:${(statsU.pmAccess * 100).toFixed(1)}%;background:#1f8fb0"></i></div>
+      <div class="small">PeopleMover trips: <b>${fmtK(rT.peoplemover ?? 0)}/hr</b> today vs <b>${fmtK(rU.peoplemover ?? 0)}/hr</b> upgraded.</div>`;
+  } else if (u.id === 'hyperspace') {
+    el.innerHTML = `Live model readout: Space Mountain trips per hour<br>` + rideRow('Demand with the refresh', rT.spaceMountain ?? 0, rU.spaceMountain ?? 0) + `<div class="small">${qd('smEntrance')}</div>`;
+  } else if (u.id === 'stitch') {
+    el.innerHTML = `Live model readout: guests seated in Stitch's Great Escape per hour<br>` + rideRow('Closed today vs reopened', rT.stitch ?? 0, rU.stitch ?? 0) + `<div class="small">${qd('promenade')}</div>`;
+  } else if (u.zone) {
     const dt = statsT.zoneDensity[u.zone];
     const du = statsU.zoneDensity[u.zone];
     const pct = (d: number) => Math.min(100, (d / 1.1) * 100).toFixed(0);

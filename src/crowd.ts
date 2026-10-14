@@ -60,26 +60,32 @@ export class CrowdView {
     }
     scene.add(this.mesh);
 
-    // Standing crowds: mobile-order pickup + dark-ride queue spill (move or
-    // disappear in Upgraded), and the speedway queue (always there).
+    // Standing crowds that move between modes: the Speedway queue spilling
+    // back up the walkway today (it sits in the coaster's switchbacks once
+    // Sugar Rush lands), and promenade loiterers who head into the reopened
+    // Stitch show queue in Upgraded.
     let seed = 3;
     const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const add = (t: THREE.Vector2, u: THREE.Vector2) => {
       this.stand.today.push(t);
       this.stand.up.push(u);
     };
-    for (let i = 0; i < 26; i++) {
-      const t = new THREE.Vector2(L.pickupToday.x - 8 + r() * 16, L.pickupToday.z - 3 + r() * 7);
-      const u = new THREE.Vector2(L.pickupUp.x - 4 + r() * 8, L.pickupUp.z + 4.5 + r() * 5);
+    const n0 = nodeById('N0');
+    const sp = nodeById('SPq');
+    for (let i = 0; i < 30; i++) {
+      const k = 0.1 + r() * 0.75;
+      const t = new THREE.Vector2(sp.x + (n0.x - sp.x) * k + (r() - 0.5) * 3.5, sp.z + (n0.z - sp.z) * k + (r() - 0.5) * 3.5);
+      const lane = i % 6;
+      const u = new THREE.Vector2(L.speedwayQueue.x - 7 + r() * 14, L.speedwayQueue.z - 5 + lane * 2 + 1);
       add(t, u);
     }
-    // Buzz Lightyear queue spill onto the plaza walkway (today) -> inside the merge portal.
-    const bz = nodeById('BZin');
-    const cs = nodeById('CS');
-    for (let i = 0; i < 12; i++) {
-      const k = 0.15 + r() * 0.55;
-      const t = new THREE.Vector2(bz.x + (cs.x - bz.x) * k + (r() - 0.5) * 3, bz.z + (cs.z - bz.z) * k + (r() - 0.5) * 3);
-      const u = new THREE.Vector2(bz.x - 3 + (i % 2) * 6 + r() * 0.6, bz.z + 3 + (i >> 1) * 0.9);
+    const p0 = nodeById('P0');
+    const cw = nodeById('CW');
+    for (let i = 0; i < 16; i++) {
+      const k = r() * 0.8;
+      const t = new THREE.Vector2(p0.x + (cw.x - p0.x) * k + (r() - 0.5) * 6, p0.z + (cw.z - p0.z) * k + (r() - 0.5) * 6);
+      const lane = i % 3;
+      const u = new THREE.Vector2(L.stitch.rx - 6 + r() * 12, L.northBldg.z1 + 2.8 + lane * 1.6);
       add(t, u);
     }
     this.movableStand = this.stand.today.length;
@@ -155,7 +161,7 @@ export class CrowdView {
       this.standMesh.setMatrixAt(i, this.m4);
     }
     this.standMesh.instanceMatrix.needsUpdate = true;
-    // Pickup + merge-spill guests read as congestion today, normal once moved.
+    // Queue-spill and promenade guests read as congestion today, normal once moved.
     if (Math.abs(u - this.lastStandU) > 0.001) {
       this.lastStandU = u;
       for (let i = 0; i < this.movableStand; i++) {
