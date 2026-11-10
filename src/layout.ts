@@ -21,41 +21,41 @@ export interface EdgeDef {
 
 export const NODES: NodeDef[] = [
   // Edges of the land (guests arrive and leave here)
-  { id: 'HUB', x: -118, z: 6 },
-  { id: 'MS', x: -80, z: 84 },
-  { id: 'FL', x: -104, z: -64 },
-  { id: 'SC', x: 22, z: -134 },
+  { id: 'HUB', x: -94, z: 0 },
+  { id: 'MS', x: -86, z: 84 },
+  { id: 'FL', x: -84, z: -92 },
+  { id: 'SC', x: 50, z: -156 },
   // Hub bridge and promenade
-  { id: 'BR', x: -78, z: 6 },
-  { id: 'E', x: -62, z: 6 },
-  { id: 'P0', x: -44, z: 4 },
-  { id: 'TT', x: -64, z: 24 },
+  { id: 'BR', x: -72, z: 0 },
+  { id: 'E', x: -64, z: 0 },
+  { id: 'P0', x: -40, z: 0 },
+  { id: 'TT', x: -66, z: 20 },
   // Rocket Tower Plaza ring around the Astro Orbiter / PeopleMover station
   { id: 'CW', x: -20, z: 0 },
   { id: 'CN', x: 0, z: -20 },
   { id: 'CE', x: 20, z: 0 },
   { id: 'CS', x: 0, z: 20 },
-  // North: Cosmic Ray's, Speedway, Fantasyland walkway
-  { id: 'CR', x: -12, z: -13 },
+  // North: Cosmic Ray's, the walkway between it and Sugar Rush, Fantasyland
+  { id: 'CR', x: -32, z: -5 },
   // Former Stitch's Great Escape doors on the promenade, across from Laugh Floor
-  { id: 'SG', x: -52, z: -6 },
-  { id: 'N0', x: 6, z: -42 },
-  { id: 'N1', x: -30, z: -63 },
-  { id: 'SPq', x: 18, z: -62 },
+  { id: 'SG', x: -53, z: -5 },
+  { id: 'N0', x: -10, z: -30 },
+  { id: 'N1', x: -12, z: -72 },
+  { id: 'SPq', x: -3, z: -46 },
   // East: Space Mountain, Launch Depot, TRON
-  { id: 'S1', x: 42, z: -10 },
-  { id: 'SMin', x: 72, z: -16 },
-  { id: 'T0', x: 42, z: -36 },
-  { id: 'T1', x: 48, z: -62 },
-  { id: 'SMx', x: 62, z: -64 },
-  { id: 'TR', x: 48, z: -84 },
+  { id: 'S1', x: 40, z: -16 },
+  { id: 'SMin', x: 80, z: -36 },
+  { id: 'SMx', x: 62, z: -2 },
+  { id: 'T0', x: 50, z: -40 },
+  { id: 'T1', x: 56, z: -62 },
+  { id: 'TR', x: 58, z: -86 },
   // South: Laugh Floor, Buzz Lightyear, Carousel of Progress
-  { id: 'LF', x: -48, z: 20 },
-  { id: 'BZin', x: -20, z: 22 },
-  { id: 'BZex', x: -4, z: 46 },
-  { id: 'SH', x: 10, z: 44 },
-  { id: 'C1', x: 30, z: 24 },
-  { id: 'COP', x: 46, z: 38 },
+  { id: 'LF', x: -54, z: 6 },
+  { id: 'BZin', x: -28, z: 6 },
+  { id: 'BZex', x: -16, z: 42 },
+  { id: 'SH', x: -8, z: 32 },
+  { id: 'C1', x: 32, z: 22 },
+  { id: 'COP', x: 32, z: 38 },
   // PeopleMover exit
   { id: 'PMx', x: 13, z: 14 },
 ];
@@ -64,7 +64,7 @@ export const EDGES: EdgeDef[] = [
   { a: 'HUB', b: 'BR', w: 14, paint: true },
   { a: 'BR', b: 'E', w: 14, paint: true },
   { a: 'E', b: 'P0', w: 14, paint: true },
-  { a: 'P0', b: 'CW', w: 9, paint: true },
+  { a: 'P0', b: 'CW', w: 10, paint: true },
   { a: 'E', b: 'TT', w: 8, paint: true },
   { a: 'TT', b: 'MS', w: 9, paint: true },
   { a: 'P0', b: 'LF', w: 7, paint: true },
@@ -75,24 +75,20 @@ export const EDGES: EdgeDef[] = [
   { a: 'CE', b: 'CS', w: 10 },
   { a: 'CS', b: 'CW', w: 10 },
   { a: 'CW', b: 'CR', w: 8, paint: true },
-  { a: 'CR', b: 'CN', w: 8 },
   { a: 'CN', b: 'N0', w: 10, paint: true },
-  { a: 'N0', b: 'N1', w: 8, paint: true },
+  { a: 'N0', b: 'N1', w: 9, paint: true },
   { a: 'N1', b: 'FL', w: 9, paint: true },
   { a: 'N0', b: 'SPq', w: 6, paint: true },
-  { a: 'N0', b: 'T0', w: 8, paint: true },
   { a: 'CE', b: 'S1', w: 12, paint: true },
   { a: 'S1', b: 'SMin', w: 7, paint: true },
+  { a: 'S1', b: 'SMx', w: 7, paint: true },
   { a: 'S1', b: 'T0', w: 9, paint: true },
   { a: 'T0', b: 'T1', w: 7, paint: true },
-  { a: 'T1', b: 'SMx', w: 7, paint: true },
   { a: 'T1', b: 'TR', w: 8, paint: true },
   { a: 'TR', b: 'SC', w: 7, paint: true },
-  { a: 'N0', b: 'T1', w: 5, paint: true },
   { a: 'CS', b: 'BZin', w: 7, paint: true },
   { a: 'BZex', b: 'SH', w: 7, paint: true },
   { a: 'SH', b: 'CS', w: 8, paint: true },
-  { a: 'SH', b: 'C1', w: 7, paint: true },
   { a: 'CE', b: 'C1', w: 9, paint: true },
   { a: 'C1', b: 'COP', w: 8, paint: true },
   { a: 'CE', b: 'PMx', w: 8 },
@@ -107,26 +103,45 @@ export const nodeById = (id: string): NodeDef => {
 
 // Landmark positions used by both the scene and the pins.
 export const L = {
-  hub: { x: -140, z: 6, r: 44 },
-  moat: { x: -140, z: 6, r0: 48, r1: 57 },
-  bridge: { x0: -98, x1: -78, z: 6, w: 14 },
+  hub: { x: -128, z: -4, r: 40 },
+  moat: { x: -128, z: -4, r0: 44, r1: 52 },
+  bridge: { x0: -88, x1: -70, z: 0, w: 14 },
   spinner: { x: 0, z: 0 },
-  dome: { x: 102, z: -28, r: 24 },
-  launchDepot: { x: 58, z: -74 },
-  tron: { x: 72, z: -102, w: 70, d: 24 },
-  speedway: { x: -26, z: -94, rx: 54, rz: 17 },
-  speedwayQueue: { x: 28, z: -66 },
-  theater: { x: 64, z: 50, r: 15 },
-  northBldg: { x0: -72, x1: -16, z0: -50, z1: -10 },
-  southBldg: { x0: -60, x1: -10, z0: 26, z1: 60 },
-  laughFloorSplit: -38,
+  dome: { x: 106, z: -42, r: 24 },
+  launchDepot: { x: 66, z: -6 },
+  /** Canopy centre, size and turn (it runs south-west to north-east). */
+  tron: { x: 84, z: -112, w: 76, d: 26, rot: 0.45 },
+  /**
+   * Sugar Rush fills the former Speedway plot, which runs north-south between
+   * Cosmic Ray's and Space Mountain. rx/rz are the footprint half-sizes before
+   * the turn and scale; the station end faces the plaza.
+   */
+  speedway: { x: 14, z: -70, rx: 54, rz: 17, rot: -Math.PI / 2, s: 0.8 },
+  speedwayQueue: { x: -8, z: -50 },
+  theater: { x: 15, z: 54, r: 15, s: 1.3 },
+  northBldg: { x0: -66, x1: -22, z0: -51, z1: -9 },
+  southBldg: { x0: -64, x1: -20, z0: 9, z1: 47 },
+  laughFloorSplit: -42,
   /** Former Stitch theater bay of the north building (rotunda centre and frontage). */
-  stitch: { x0: -64, x1: -42, rx: -53, rz: -30 },
-  terrace: { x: -79, z: 37 },
-  starTraders: { x: 26, z: -22 },
+  stitch: { x0: -62, x1: -44, rx: -53, rz: -30 },
+  terrace: { x: -82, z: 40 },
+  starTraders: { x: 32, z: 10 },
   lunchingPad: { x: 9, z: -12 },
-  shop: { x: 14, z: 54 },
+  shop: { x: -6, z: 52 },
   railroad: [
-    [-40, -160], [30, -150], [64, -118], [70, -70], [68, -10], [72, 50], [58, 102], [10, 130], [-60, 140],
+    [-40, -176], [30, -166], [70, -136], [80, -90], [78, -40], [74, -10], [58, 30], [40, 80], [0, 110], [-60, 128],
   ] as [number, number][],
 };
+
+/** Is (x, z) inside the Sugar Rush footprint (plus pad)? Handles its turn. */
+export function inSugarRush(x: number, z: number, pad = 0): boolean {
+  const sw = L.speedway;
+  const c = Math.cos(sw.rot);
+  const s = Math.sin(sw.rot);
+  const dx = x - sw.x;
+  const dz = z - sw.z;
+  // World -> local for a turn of rot around the up axis.
+  const lx = dx * c - dz * s;
+  const lz = dx * s + dz * c;
+  return Math.abs(lx) < (sw.rx + 6) * sw.s + pad && Math.abs(lz) < (sw.rz + 4) * sw.s + pad;
+}
