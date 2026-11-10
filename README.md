@@ -42,18 +42,20 @@ Personal concept project. Not affiliated with Disney. Every building, ride and p
 
 ## Features
 
-- **Real layout.** The model follows the real Tomorrowland, with the castle hub to the west:
+- **Real layout.** The model is placed from the park map at roughly 2 m per unit, with the castle hub to the west:
   - **Entrance and south side:** the hub bridge leads onto the Rocket Tower Plaza promenade. Monsters, Inc. Laugh Floor and Buzz Lightyear's Space Ranger Spin sit in the south show building, with Tomorrowland Terrace by the bridge.
   - **North side:** the north show building holds Merchant of Venus, the former Stitch theater and Cosmic Ray's.
   - **Centre:** the Astro Orbiter sits on top of the PeopleMover station.
-  - **East:** Space Mountain sits outside the railroad berm, with the Launch Depot exit between it and the TRON Lightcycle / Run canopy.
-  - **South-east:** the Carousel of Progress.
+  - **North-east:** the former Speedway plot (now Sugar Rush) runs north from the plaza, with Space Mountain to its east and the TRON Lightcycle / Run canopy beyond it, angled south-west to north-east.
+  - **South:** the Carousel of Progress, below the plaza.
+- **Detailed models built in Blender.** The show buildings, Carousel of Progress, Tomorrowland Terrace, palms, oaks, pines, lamp posts, benches and planters are modelled in Blender (paneled cladding, ribbed vaults, rooftop plant, glazed shopfronts). [`blender/build_models.py`](blender/build_models.py) builds them headless and [`blender/build.sh`](blender/build.sh) exports compressed GLB files (about 230 KB in total). The site matches their materials by name so they glow and light like the rest of the scene, and shows simple stand-ins until they load.
 
   Sources and open questions are in [`LAYOUT-NOTES.md`](LAYOUT-NOTES.md).
 - **Sign text always fits.** Signs are drawn on a canvas that shrinks each line until it fits the panel, then redraws once the web fonts load.
 - **Retro-futurist identity:** a 1960s space-age look with crisp white, brushed silver, sky and teal blues, and a coral/orange accent. The fonts are Michroma, Outfit and IBM Plex Mono, and the wordmark is drawn in SVG.
 - **Performance:**
-  - instanced track, rivets, girders, trees and lamps
+  - instanced track, rivets, girders, trees, lamps and benches
+  - Blender models joined into one mesh per material and meshopt-compressed
   - environment reflections only on the Space Mountain metals
   - shadows refresh at about 20 Hz
   - half-resolution bloom
@@ -89,10 +91,15 @@ Handy URL options:
 ```
 src/
   main.ts          renderer, camera, router, UI, tour
-  world.ts         procedural scene (all geometry built in code)
+  world.ts         procedural scene, plus slots for the Blender models
+  models.ts        loads the Blender GLB files and matches their materials
   spaceMountain.ts Hyperspace Mountain: shell, fins, cannon, portal, light effects
   layout.ts        walkway graph and landmark positions
   content.ts       upgrade cards, Space Mountain story and area labels
   style.css        site + overlay styles
+blender/
+  build_models.py  Blender script that models and exports the detailed pieces
+  build.sh         runs it and compresses the GLB files into public/models/
+public/models/     exported models
 LAYOUT-NOTES.md    layout research, sources, open questions
 ```

@@ -4,6 +4,21 @@ These notes record how the 3D model's layout was set, what it is based on, and w
 
 **Research limits:** in this session web search worked but page fetches did not (DNS blocked). So the findings below come from search-result summaries of the sources listed, plus general knowledge of the park. None of it is from a direct read of an official map. Points marked **[confirm]** are my best placement and should be checked against the current park map or Bryan's memory.
 
+## Update, November 2026: placed from the park map
+
+Bryan shared a park map with Tomorrowland outlined. Every landmark was re-placed from it at about 2 m per unit (one map pixel is about one model unit at 0.5x), with the Astro Orbiter as the origin. Main changes:
+
+- **Carousel of Progress** moved to the south edge of the land, below the plaza (it was south-east).
+- **Speedway plot / Sugar Rush** now runs north-south between Cosmic Ray's and Space Mountain, with the station end facing the plaza and the queue on the walkway along its west side.
+- **Space Mountain** moved slightly north-east. The **Launch Depot** sits south-west of it, beside the PeopleMover.
+- **TRON Lightcycle / Run** canopy angled south-west to north-east, north of Space Mountain, with the show building at its north-east end.
+- **Fantasyland walkway** leaves from the walkway between Cosmic Ray's and the Sugar Rush plot, then heads north-west.
+- **North and south show buildings** resized to the map footprints on either side of the promenade.
+- **Castle hub, moat and bridge** moved closer, matching the map distance.
+- **PeopleMover** route redrawn: station, north-east into Space Mountain, south past the Carousel, west through the south show building, north through the north show building and Sugar Rush, back to the station.
+
+The table below is the earlier research; where it disagrees with the list above, the map wins.
+
 ## Orientation used in the model
 
 - Units are about 2 m. x runs east and z runs south, so north is up on the top-down view (`?view=top`).

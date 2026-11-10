@@ -1,8 +1,9 @@
 // Procedural scene: every mesh here is built in code from three.js primitives.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { EDGES, L, nodeById } from './layout';
+import { EDGES, L, inSugarRush, nodeById } from './layout';
 import { buildSpaceMountain } from './spaceMountain';
+import { instance, loadBuilding, loadPieces, type MatTable, type Part } from './models';
 
 const C = {
   white: 0xe9edf8,
@@ -36,6 +37,26 @@ export const mats = {
   water: new THREE.MeshStandardMaterial({ color: 0x0c1f52, emissive: 0x081640, emissiveIntensity: 0.5, roughness: 0.15, metalness: 0.4 }),
   sail: new THREE.MeshStandardMaterial({ color: 0xf4f6ff, roughness: 0.6, side: THREE.DoubleSide, flatShading: true }),
   dark: new THREE.MeshStandardMaterial({ color: 0x13222f, roughness: 0.7 }),
+};
+
+// Materials for the Blender models, matched by material name (see models.ts).
+const modelMats: MatTable = {
+  white: mats.white,
+  silver: mats.silver,
+  dark: mats.dark,
+  warmGlow: mats.warmGlow,
+  blueGlow: mats.blueGlow,
+  blueSoft: mats.blueSoft,
+  foliage: mats.foliage,
+  planter: mats.white,
+  panel: new THREE.MeshStandardMaterial({ color: 0xd5ddef, roughness: 0.55, metalness: 0.15, flatShading: true }),
+  roof: new THREE.MeshStandardMaterial({ color: 0x7d88a8, roughness: 0.5, metalness: 0.5, flatShading: true }),
+  // Lit interiors seen through dark glass at night.
+  glass: new THREE.MeshStandardMaterial({ color: 0x0d1d33, emissive: 0x9cc8ff, emissiveIntensity: 0.16, roughness: 0.12, metalness: 0.7 }),
+  coral: new THREE.MeshStandardMaterial({ color: 0xff6b4a, roughness: 0.5, flatShading: true }),
+  foliageDark: new THREE.MeshStandardMaterial({ color: 0x1d6f6a, roughness: 0.85, flatShading: true }),
+  palm: new THREE.MeshStandardMaterial({ color: 0x3a9a72, roughness: 0.75, flatShading: true, side: THREE.DoubleSide }),
+  trunk: new THREE.MeshStandardMaterial({ color: 0x8a7a6a, roughness: 0.9, flatShading: true }),
 };
 
 function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, cast = true, receive = true) {
@@ -368,13 +389,15 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   // Progress -> over the former Galaxy Palace site -> south show building
   // (Buzz / Laugh Floor) -> across the promenade -> north show building -> station.
   const trackPts = [
-    [-16, 5], [0, 6.5], [16, 5], [32, -4], [52, -14], [72, -22], [90, -44], [108, -30], [96, -2],
-    [80, 18], [84, 46], [70, 72], [42, 82], [12, 70], [-16, 48], [-44, 44], [-66, 28], [-68, 0],
-    // North show building, then out across the Fantasyland walkway and
-    // through the Sugar Rush show building (a short enclosed run beside the
-    // racing coaster), then back south over Cosmic Ray's.
-    [-62, -30], [-66, -56], [-60, -69], [-49, -75.4], [-36, -75.8], [-24, -75.4], [-13, -69], [-6, -56], [-10, -40], [-20, -22], [-22, -4],
-  ].map(([x, z]) => new THREE.Vector3(x, 9.6, z));
+    // Station, then north-east beside the Space Mountain walkway and into the dome.
+    [-14, 7], [0, 8], [16, 4], [30, -8], [48, -22], [66, -31], [86, -40], [104, -56], [124, -46], [124, -28], [106, -18], [86, -20],
+    // Back out, south past the Carousel of Progress, then west through the
+    // south show building (Buzz / Laugh Floor).
+    [68, -6], [52, 10], [46, 28], [34, 36], [18, 30], [0, 30], [-18, 30], [-36, 30], [-54, 26], [-68, 14],
+    // North across the promenade, through the north show building, then east
+    // through the Sugar Rush show building and back south to the station.
+    [-70, -2], [-66, -18], [-58, -34], [-48, -48], [-34, -60], [-18, -70], [0, -76], [10, -66], [12, -50], [6, -36], [-6, -26], [-18, -16], [-24, -2],
+].map(([x, z]) => new THREE.Vector3(x, 9.6, z));
   const track = new THREE.CatmullRomCurve3(trackPts, true, 'centripetal');
   const SEG = 440;
   const beamGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -406,7 +429,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     Math.hypot(p.x, p.z) < 13 ||
     (p.x > L.southBldg.x0 && p.x < L.southBldg.x1 && p.z > L.southBldg.z0 && p.z < L.southBldg.z1) ||
     (p.x > L.northBldg.x0 && p.x < L.northBldg.x1 && p.z > L.northBldg.z0 && p.z < L.northBldg.z1) ||
-    (p.x > L.speedway.x - 61 && p.x < L.speedway.x + 59 && p.z > L.speedway.z - 22 && p.z < L.speedway.z + 22);
+    inSugarRush(p.x, p.z, 2);
   for (let d = 0; d < totalLen; d += 13) {
     const p = track.getPointAt(d / totalLen);
     if (!inside(p)) colPos.push(p);
@@ -638,7 +661,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const canopyMat = new THREE.MeshStandardMaterial({ color: 0x2f5878, metalness: 0.6, roughness: 0.3, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.88 });
   const canopy = new THREE.Group();
   canopy.position.set(tr.x, 0, tr.z);
-  canopy.rotation.y = 0.12;
+  canopy.rotation.y = tr.rot;
   canopy.add(mesh(canopyGeo, canopyMat));
   // Glowing ribs running along the canopy (they cycle colour at night).
   const ribMats: THREE.MeshStandardMaterial[] = [];
@@ -668,7 +691,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const cycles = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.7, 2.2, 2, 6).rotateZ(Math.PI / 2), mats.emberGlow, 7);
   canopy.add(cycles);
   // Show building outside the berm.
-  canopy.add(box(44, 14, 22, mats.dark, 2, 7, -40));
+  canopy.add(box(40, 14, 26, mats.dark, 30, 7, -34));
   scene.add(canopy);
   let tronPhase = 0;
   animators.push((dt, time) => {
@@ -695,7 +718,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   // ---------- Sugar Rush queue switchbacks (by the walkway) ----------
   const sw = L.speedway; // the coaster sits in the former Speedway footprint
   const sq = L.speedwayQueue;
-  for (let i = 0; i < 6; i++) scene.add(box(15, 0.9, 0.18, mats.silver, sq.x, 0.5, sq.z - 5 + i * 2));
+  for (let i = 0; i < 6; i++) scene.add(box(10, 0.9, 0.18, mats.silver, sq.x, 0.5, sq.z - 5 + i * 2));
 
   // ---------- Upgrade 1: Sugar Rush, an indoor dual racing coaster ----------
   // A candy-themed show building fills the Speedway footprint. Inside, two
@@ -707,6 +730,10 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     new THREE.MeshStandardMaterial({ color: c, roughness: 0.35, metalness: 0.05, emissive: c, emissiveIntensity: e, flatShading: true });
   const coaster = new THREE.Group();
   coaster.position.set(sw.x, 0, sw.z);
+  coaster.rotation.y = sw.rot;
+  coaster.scale.setScalar(sw.s);
+  coaster.updateMatrixWorld(true);
+  const toLocal = (p: THREE.Vector3) => coaster.worldToLocal(p.clone());
   // Centre line [x, y, z, bank] relative to the Speedway centre.
   const crPts: [number, number, number, number][] = [
     [44, 3, 12, 0], [30, 3, 12, 0], [18, 3.2, 12, 0], [2, 3.6, 12, 0], [-14, 4.5, 12, 0],
@@ -867,13 +894,15 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     let prev = track.getPointAt(0);
     for (let i = 1; i <= S; i++) {
       const p = track.getPointAt(i / S);
-      const z0 = prev.z - sw.z - BZ;
-      const z1 = p.z - sw.z - BZ;
+      const lp = toLocal(prev);
+      const lq = toLocal(p);
+      const z0 = lp.z - BZ;
+      const z1 = lq.z - BZ;
       if (z0 * z1 <= 0 && z0 !== z1) {
         const k = z0 / (z0 - z1);
-        const x = prev.x + (p.x - prev.x) * k - sw.x;
+        const x = lp.x + (lq.x - lp.x) * k;
         if (x > BX0 && x < BX1) {
-          const dir = new THREE.Vector2(p.x - prev.x, p.z - prev.z).normalize();
+          const dir = new THREE.Vector2(lq.x - lp.x, lq.z - lp.z).normalize();
           const half = (2.2 / Math.max(0.25, Math.abs(dir.y))) + 1.2;
           openings.push([x - half, x + half]);
         }
@@ -935,9 +964,9 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     const S = 1600;
     for (let i = 0; i < S; i++) {
       const p = track.getPointAt(i / S);
-      const lx = p.x - sw.x;
-      const lz = p.z - sw.z;
-      if (lx > BX0 + 1 && lx < BX1 - 1 && lz > -BZ && lz < BZ - 0.4) inside.push({ p: new THREE.Vector3(lx, p.y, lz), t: track.getTangentAt(i / S) });
+      const lp = toLocal(p);
+      if (lp.x > BX0 + 1 && lp.x < BX1 - 1 && lp.z > -BZ && lp.z < BZ - 0.4)
+        inside.push({ p: lp, t: track.getTangentAt(i / S).transformDirection(new THREE.Matrix4().makeRotationY(-sw.rot)) });
     }
     const spots = inside.filter((_, i) => i % 4 === 0);
     const roof = new THREE.InstancedMesh(new THREE.BoxGeometry(1.9, 0.25, 4.8), candyMat(candy.cream), spots.length);
@@ -1077,18 +1106,15 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const th = L.theater;
   const theater = new THREE.Group();
   theater.position.set(th.x, 0, th.z);
-  theater.add(cyl(th.r, th.r + 0.6, 9, 36, mats.white, 0, 4.5, 0));
-  theater.add(cyl(th.r + 0.25, th.r + 0.25, 0.6, 36, mats.blueGlow, 0, 7.6, 0));
+  // Simple stand-in shell, swapped for the Blender model once it loads.
+  const theaterShell = new THREE.Group();
+  theaterShell.add(cyl(th.r, th.r + 0.6, 9, 36, mats.white, 0, 4.5, 0));
+  theaterShell.add(cyl(th.r + 0.25, th.r + 0.25, 0.6, 36, mats.blueGlow, 0, 7.6, 0));
   const roof = mesh(new THREE.CylinderGeometry(4, th.r + 1.2, 3.4, 36), mats.silver);
   roof.position.y = 10.7;
-  theater.add(roof);
-  theater.add(cyl(4, 4, 1.6, 24, mats.white, 0, 13.1, 0));
-  for (let i = 0; i < 18; i++) {
-    const a = (i / 18) * Math.PI * 2;
-    const f = box(0.5, 9, 1.2, mats.silver, Math.cos(a) * (th.r + 0.6), 4.5, Math.sin(a) * (th.r + 0.6));
-    f.rotation.y = -a;
-    theater.add(f);
-  }
+  theaterShell.add(roof);
+  theaterShell.add(cyl(4, 4, 1.6, 24, mats.white, 0, 13.1, 0));
+  theater.add(theaterShell);
   const copN = nodeById('COP');
   const thA = Math.atan2(copN.z - th.z, copN.x - th.x);
   const thEnt = new THREE.Group();
@@ -1107,26 +1133,25 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     turntable.add(s);
   }
   theater.add(turntable);
+  theater.scale.setScalar(th.s);
   scene.add(theater);
   animators.push((dt) => {
     turntable.rotation.y += dt * 0.2 * motion;
   });
-  // Former Galaxy Palace Theater site south of the Carousel: open plaza.
-  const gp = mesh(new THREE.CylinderGeometry(14, 14, 0.12, 40), mats.plaza, false, true);
-  gp.position.set(40, 0.06, 82);
-  scene.add(gp);
 
   // ---------- South show building: Laugh Floor + Buzz Lightyear ----------
   const sb = L.southBldg;
   const sbW = sb.x1 - sb.x0;
   const sbD = sb.z1 - sb.z0;
-  scene.add(box(sbW, 11, sbD, mats.white, (sb.x0 + sb.x1) / 2, 5.5, (sb.z0 + sb.z1) / 2));
-  scene.add(box(sbW + 0.6, 0.5, sbD + 0.6, mats.silver, (sb.x0 + sb.x1) / 2, 11.2, (sb.z0 + sb.z1) / 2));
+  const southShell = new THREE.Group();
+  southShell.add(box(sbW, 11, sbD, mats.white, (sb.x0 + sb.x1) / 2, 5.5, (sb.z0 + sb.z1) / 2));
+  southShell.add(box(sbW + 0.6, 0.5, sbD + 0.6, mats.silver, (sb.x0 + sb.x1) / 2, 11.2, (sb.z0 + sb.z1) / 2));
+  scene.add(southShell);
   // Laugh Floor facade (west)
   scene.add(box(L.laughFloorSplit - sb.x0 - 2, 2, 0.6, mats.warmGlow, (sb.x0 + L.laughFloorSplit) / 2, 8.5, sb.z0 - 0.3));
   for (let i = 0; i < 4; i++) scene.add(cyl(1.2, 1.2, 0.4, 16, mats.blueGlow, sb.x0 + 4 + i * 5, 5, sb.z0 - 0.3).rotateX(Math.PI / 2));
   // Buzz facade (east): angled fins + planet sign
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 5; i++) {
     const x = L.laughFloorSplit + 3 + i * 4;
     const f = box(0.6, 12.5, 3.2, mats.silver, x, 6.2, sb.z0 - 1.2);
     f.rotation.y = 0.5;
@@ -1151,20 +1176,23 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const nb = L.northBldg;
   const nbW = nb.x1 - nb.x0;
   const nbD = nb.z1 - nb.z0;
-  scene.add(box(nbW, 10, nbD, mats.white, (nb.x0 + nb.x1) / 2, 5, (nb.z0 + nb.z1) / 2));
-  scene.add(box(nbW + 0.6, 0.5, nbD + 0.6, mats.silver, (nb.x0 + nb.x1) / 2, 10.2, (nb.z0 + nb.z1) / 2));
+  const northShell = new THREE.Group();
+  northShell.add(box(nbW, 10, nbD, mats.white, (nb.x0 + nb.x1) / 2, 5, (nb.z0 + nb.z1) / 2));
+  northShell.add(box(nbW + 0.6, 0.5, nbD + 0.6, mats.silver, (nb.x0 + nb.x1) / 2, 10.2, (nb.z0 + nb.z1) / 2));
   for (let i = 0; i < 10; i++) {
     const x = nb.x0 + 3 + i * 5.6;
     if (x > L.stitch.x0 && x < L.stitch.x1) continue;
-    scene.add(box(0.5, 10, 1.4, mats.silver, x, 5, nb.z1 + 0.6));
+    northShell.add(box(0.5, 10, 1.4, mats.silver, x, 5, nb.z1 + 0.6));
   }
+  scene.add(northShell);
   // Cosmic Ray's: vaulted roof over the east end + glowing band
   const vault = mesh(new THREE.CylinderGeometry(9, 9, 24, 20, 1, false, 0, Math.PI), mats.silver);
   vault.rotation.set(0, 0, Math.PI / 2);
   vault.scale.set(0.5, 1, 1);
-  vault.position.set(nb.x1 - 13, 10, (nb.z0 + nb.z1) / 2 + 2);
-  scene.add(vault);
-  scene.add(box(26, 0.35, 0.4, mats.warmGlow, nb.x1 - 13, 9.4, nb.z1 + 1.4));
+  vault.scale.set(0.5, 0.85, 1);
+  vault.position.set(nb.x1 - 11, 10, (nb.z0 + nb.z1) / 2 + 2);
+  northShell.add(vault);
+  scene.add(box(20, 0.35, 0.4, mats.warmGlow, nb.x1 - 11, 9.4, nb.z1 + 1.4));
   // Merchant of Venus band at the west end.
   scene.add(box(6, 0.35, 0.4, mats.blueSoft, nb.x0 + 4, 8.6, nb.z1 + 0.5));
 
@@ -1172,9 +1200,8 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const sg = L.stitch;
   const sgCx = (sg.x0 + sg.x1) / 2;
   const drumMat = new THREE.MeshStandardMaterial({ color: 0xdfe6f0, roughness: 0.6, flatShading: true });
-  const drum = cyl(10, 10.5, 5, 28, drumMat, sg.rx, 12.5, sg.rz);
-  scene.add(drum);
-  scene.add(cyl(6, 10.2, 2.4, 28, mats.silver, sg.rx, 16.2, sg.rz));
+  northShell.add(cyl(10, 10.5, 5, 28, drumMat, sg.rx, 12.5, sg.rz));
+  northShell.add(cyl(6, 10.2, 2.4, 28, mats.silver, sg.rx, 16.2, sg.rz));
   // Reopened: refreshed, lit facade with an open entrance and a queue.
   const sgUp = new THREE.Group();
   const alienBlue = new THREE.MeshStandardMaterial({ color: 0x3aa6ff, emissive: 0x3aa6ff, emissiveIntensity: 2 });
@@ -1224,6 +1251,7 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   terr.add(terrRoof);
   for (const z of [-10, -3.3, 3.3, 10]) terr.add(cyl(0.3, 0.3, 6, 6, mats.silver, -7, 3, z));
   scene.add(terr);
+  const terrModelAt = new THREE.Vector3(tt.x, 0, tt.z);
   const umbGeo = new THREE.ConeGeometry(2.2, 0.9, 8);
   for (const [x, z] of [[-30, 6 - 14], [-24, -13], [tt.x - 9, tt.z - 6], [tt.x - 9, tt.z + 4]]) {
     scene.add(cyl(0.9, 0.9, 1.1, 10, mats.silver, x, 0.55, z));
@@ -1261,6 +1289,8 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
   const perp = new THREE.Vector2(-pdz / plen, pdx / plen);
   const planterGeo = new THREE.CylinderGeometry(2, 2.2, 1.2, 10);
   const treeGeo = new THREE.IcosahedronGeometry(2.2, 0);
+  const planterShell = new THREE.Group();
+  const planterSpots: THREE.Vector3[] = [];
   for (const side of [-1, 1]) {
     for (const t of [0.3, 0.7]) {
       const g = new THREE.Group();
@@ -1268,9 +1298,16 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
       g.add(mesh(treeGeo, mats.foliage).translateY(3.4));
       const off = (7 / 2 + 2.4) * side;
       g.position.set(j0.x + pdx * t + perp.x * off, 0, j0.z + pdz * t + perp.y * off);
-      scene.add(g);
+      planterSpots.push(g.position.clone());
+      planterShell.add(g);
     }
   }
+  // More planters around the Rocket Tower Plaza ring.
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    planterSpots.push(new THREE.Vector3(Math.cos(a) * 30, 0, Math.sin(a) * 30));
+  }
+  scene.add(planterShell);
 
   // ---------- Lamp posts along walkways ----------
   const lampSpots: THREE.Vector3[] = [];
@@ -1302,7 +1339,31 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     globes.setMatrixAt(i, m4);
     halos.setMatrixAt(i, m4);
   });
-  scene.add(poles, globes, halos);
+  const lampShell = new THREE.Group();
+  lampShell.add(poles, globes, halos);
+  scene.add(lampShell);
+
+  // Benches facing the walkways, between the lamps.
+  const benchMats: THREE.Matrix4[] = [];
+  for (const e of EDGES) {
+    if (!e.paint || e.a === 'HUB' || e.b === 'BR' || e.b === 'SPq' || e.b === 'SG') continue;
+    const a = nodeById(e.a);
+    const b = nodeById(e.b);
+    const len = Math.hypot(b.x - a.x, b.z - a.z);
+    if (len < 18) continue;
+    const px = -(b.z - a.z) / len;
+    const pz = (b.x - a.x) / len;
+    const yaw = -Math.atan2(b.z - a.z, b.x - a.x);
+    for (let d = 13; d < len - 8; d += 24) {
+      const side = Math.floor(d / 12) % 2 ? -1 : 1;
+      const t = d / len;
+      const off = (e.w / 2 + 1.1) * side;
+      const pos = new THREE.Vector3(a.x + (b.x - a.x) * t + px * off, 0, a.z + (b.z - a.z) * t + pz * off);
+      // The bench seat faces its local -z; turn it to face the walkway centre.
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw + (side > 0 ? 0 : Math.PI));
+      benchMats.push(new THREE.Matrix4().compose(pos, q, new THREE.Vector3(1, 1, 1)));
+    }
+  }
 
   // ---------- Trees around the edge of the land ----------
   const inRect = (x: number, z: number, x0: number, x1: number, z0: number, z1: number, pad: number) =>
@@ -1315,18 +1376,24 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     if (Math.hypot(ddx, ddz) < 34) return true;
     // Keep the launch cannon's cradle clear (it points south-east).
     if (Math.hypot(ddx, ddz) < 50 && Math.abs(Math.atan2(ddz, ddx) - (Math.PI * 0.25 + 0.15)) < 0.32) return true;
-    if (Math.hypot(x - th.x, z - th.z) < 21) return true;
+    if (Math.hypot(x - th.x, z - th.z) < th.r * th.s + 7) return true;
     if (Math.hypot(x - L.hub.x, z - L.hub.z) < L.moat.r1 + 3) return true;
-    if (Math.abs(x - sw.x) < sw.rx + 7 && Math.abs(z - sw.z) < sw.rz + 7) return true;
+    if (inSugarRush(x, z, 7)) return true;
     if (inRect(x, z, sb.x0, sb.x1, sb.z0, sb.z1, 5)) return true;
     if (inRect(x, z, nb.x0, nb.x1, nb.z0, nb.z1, 5)) return true;
-    if (inRect(x, z, tr.x - tr.w / 2, tr.x + tr.w / 2, tr.z - tr.d / 2 - 52, tr.z + tr.d / 2, 4)) return true;
-    if (Math.abs(x - tt.x) < 12 && Math.abs(z - tt.z) < 14) return true;
+    {
+      // TRON canopy and show building, in the canopy's turned frame.
+      const dx = x - tr.x;
+      const dz = z - tr.z;
+      const lx = dx * Math.cos(tr.rot) - dz * Math.sin(tr.rot);
+      const lz = dx * Math.sin(tr.rot) + dz * Math.cos(tr.rot);
+      if (Math.abs(lx) < tr.w / 2 + 6 && lz > -tr.d / 2 - 52 && lz < tr.d / 2 + 4) return true;
+    }
+    if (Math.abs(x - tt.x) < 12 && Math.abs(z - tt.z) < 19) return true;
     if (Math.abs(x - L.shop.x) < 11 && Math.abs(z - L.shop.z) < 9) return true;
     if (Math.abs(x - st.x) < 11 && Math.abs(z - st.z) < 9) return true;
     if (Math.abs(x - ld.x) < 11 && Math.abs(z - ld.z) < 9) return true;
     if (Math.abs(x - sq.x) < 14 && Math.abs(z - sq.z) < 18) return true;
-    if (Math.hypot(x - 40, z - 82) < 16) return true;
     for (const p of pmSamples) if (Math.hypot(x - p.x, z - p.z) < 4.5) return true;
     for (let i = 0; i <= 60; i++) {
       const p = rail.getPointAt(i / 60);
@@ -1362,7 +1429,57 @@ export function buildWorld(scene: THREE.Scene, opts: { reducedMotion: boolean; r
     m4.compose(new THREE.Vector3(x, 5 * s, z), new THREE.Quaternion(), new THREE.Vector3(s, s, s));
     crowns.setMatrixAt(i, m4);
   });
-  scene.add(trunks, crowns);
+  const treeShell = new THREE.Group();
+  treeShell.add(trunks, crowns);
+  scene.add(treeShell);
+
+  // ---------- Detailed models built in Blender (blender/build_models.py) ----------
+  // The simple shells above show while these load (or if they fail to).
+  const swap = (shell: THREE.Object3D, model: THREE.Object3D) => {
+    shell.removeFromParent();
+    scene.add(model);
+    opts.renderer.shadowMap.needsUpdate = true;
+  };
+  const place = (g: THREE.Object3D, x: number, z: number) => {
+    g.position.set(x, 0, z);
+    return g;
+  };
+  loadBuilding('south-building.glb', modelMats)
+    .then((g) => swap(southShell, place(g, (sb.x0 + sb.x1) / 2, (sb.z0 + sb.z1) / 2)))
+    .catch(() => undefined);
+  loadBuilding('north-building.glb', modelMats)
+    .then((g) => swap(northShell, place(g, (nb.x0 + nb.x1) / 2, (nb.z0 + nb.z1) / 2)))
+    .catch(() => undefined);
+  loadBuilding('carousel.glb', modelMats)
+    .then((g) => {
+      theaterShell.removeFromParent();
+      theater.add(g);
+      opts.renderer.shadowMap.needsUpdate = true;
+    })
+    .catch(() => undefined);
+  loadBuilding('terrace.glb', modelMats)
+    .then((g) => swap(terr, place(g, terrModelAt.x, terrModelAt.z)))
+    .catch(() => undefined);
+  loadPieces('nature.glb', modelMats)
+    .then((pieces) => {
+      const get = (n: string): Part[] => pieces.get(n) ?? [];
+      const at = (p: THREE.Vector3, s = 1, yaw = 0) =>
+        new THREE.Matrix4().compose(p, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw), new THREE.Vector3(s, s, s));
+      // Trees: mostly palms and live oaks, with a few pines at the back.
+      const kinds: Record<string, THREE.Matrix4[]> = { palm: [], oak: [], pine: [] };
+      treeSpots.forEach(([x, z, s], i) => {
+        const r = ((i * 7919) % 100) / 100;
+        const kind = z < -110 || x > 120 ? (r < 0.6 ? 'pine' : 'oak') : r < 0.45 ? 'palm' : r < 0.85 ? 'oak' : 'pine';
+        kinds[kind].push(at(new THREE.Vector3(x, 0, z), 0.75 + s * 0.55, r * Math.PI * 2));
+      });
+      const trees = new THREE.Group();
+      for (const [k, list] of Object.entries(kinds)) trees.add(instance(get(k), list));
+      swap(treeShell, trees);
+      swap(lampShell, instance(get('lamp'), lampSpots.map((p) => at(p)), false));
+      swap(planterShell, instance(get('planter'), planterSpots.map((p, i) => at(p, 1, i))));
+      scene.add(instance(get('bench'), benchMats, false));
+    })
+    .catch(() => undefined);
 
   return {
     update(dt, time) {
